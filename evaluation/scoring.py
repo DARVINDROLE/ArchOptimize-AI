@@ -61,6 +61,8 @@ class CaseScore:
     verdict: str | None
     verdict_correct: bool
     behaviours: dict[str, bool] = field(default_factory=dict)
+    findings_total: int = 0
+    findings_cited: int = 0  # findings with at least one valid (retrieved) citation
     latency_seconds: float = 0.0
     tokens_used: int | None = None
     error: str | None = None
@@ -102,6 +104,8 @@ def score_case(
         verdict=result.verdict.value,
         verdict_correct=result.verdict in expected.acceptable_verdicts,
         behaviours={b.value: _behaviour_passed(b, result) for b in expected.behaviours},
+        findings_total=len(result.findings),
+        findings_cited=sum(1 for f in result.findings if f.citation_chunk_ids),
         latency_seconds=round(latency_seconds, 3),
         tokens_used=result.tokens_used,
         error=error,
@@ -118,6 +122,7 @@ class EvalSummary:
     false_alarms: int
     verdict_accuracy: float
     behaviour_pass_rate: float | None
+    citation_rate: float | None  # cited findings / all findings (None if no findings)
     avg_latency_seconds: float
     avg_tokens: float | None
     errors: int
@@ -132,6 +137,7 @@ def summarize(reviewer: str, scores: list[CaseScore]) -> EvalSummary:
     found = sum(s.flaws_found for s in scores)
     behaviour_results = [ok for s in scores for ok in s.behaviours.values()]
     tokens = [s.tokens_used for s in scores if s.tokens_used is not None]
+    total_findings = sum(s.findings_total for s in scores)
     return EvalSummary(
         reviewer=reviewer,
         cases=n,
@@ -142,6 +148,11 @@ def summarize(reviewer: str, scores: list[CaseScore]) -> EvalSummary:
         verdict_accuracy=round(sum(s.verdict_correct for s in scores) / n, 3) if n else 0.0,
         behaviour_pass_rate=(
             round(sum(behaviour_results) / len(behaviour_results), 3) if behaviour_results else None
+        ),
+        citation_rate=(
+            round(sum(s.findings_cited for s in scores) / total_findings, 3)
+            if total_findings
+            else None
         ),
         avg_latency_seconds=round(sum(s.latency_seconds for s in scores) / n, 3) if n else 0.0,
         avg_tokens=round(sum(tokens) / len(tokens), 1) if tokens else None,

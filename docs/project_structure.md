@@ -63,7 +63,8 @@ ArchOptimize-AI/
 │  │  ├─ design_submission.py               ✅      DesignSubmission = design + requirements (output of every parser)
 │  │  ├─ finding.py                         ✅      Pillar, Severity, Citation, Finding
 │  │  ├─ candidate_design.py                ◻ [6]  DesignChange, CandidateDesign, CriticScore
-│  │  └─ review_result.py                   ✅      Verdict, ReviewDraft (LLM output), ReviewResult (pillar scores added in Step 5)
+│  │  ├─ doc_chunk.py                       ✅      DocChunk, RetrievedChunk
+│  │  └─ review_result.py                   ✅      Verdict, ReviewDraft (LLM output), ReviewResult (+ sources, uncited ids)
 │  │
 │  ├─ llm/                                  LLM ACCESS: the only place that talks to LLM APIs
 │  │  ├─ role_config.py                     ✅      loads llm_roles.yaml
@@ -93,17 +94,21 @@ ArchOptimize-AI/
 │  │  ├─ calculator_server.py               ◻      FastMCP server (stdio)
 │  │  └─ calculator_client.py               ◻      loads the MCP tools for agents
 │  │
-│  ├─ knowledge_base/                       ◻ [4]  OFFLINE: build the AWS docs index (run once)
-│  │  ├─ knowledge_sources.yaml             ◻      doc URLs + pillar tags
-│  │  ├─ doc_downloader.py                  ◻      download HTML/PDF
-│  │  ├─ doc_cleaner.py                     ◻      HTML/PDF → clean text
-│  │  ├─ doc_chunker.py                     ◻      ~500-token chunks + metadata
-│  │  └─ index_builder.py                   ◻      embed → Chroma: python -m archoptimize.knowledge_base.index_builder
+│  ├─ knowledge_base/                       ✅      OFFLINE: build the AWS docs index (run once)
+│  │  ├─ knowledge_sources.yaml             ✅      doc URLs + pillar tags (6 pillars + PCI)
+│  │  ├─ knowledge_sources.py               ✅      loads the source list
+│  │  ├─ doc_downloader.py                  ✅      download PDFs to data/source_docs (gitignored)
+│  │  ├─ doc_cleaner.py                     ✅      PDF → clean text per page (headers, TOC, ligatures)
+│  │  ├─ doc_chunker.py                     ✅      ~1,200-char chunks + metadata
+│  │  └─ index_builder.py                   ✅      embed → Chroma: python -m archoptimize.knowledge_base.index_builder
 │  │
-│  ├─ retrieval/                            ◻ [4]  ONLINE: search the index + verify citations
-│  │  ├─ vector_store.py                    ◻      open the Chroma index (read-only)
-│  │  ├─ pillar_retriever.py                ◻      pillar-filtered top-k search
-│  │  └─ citation_validator.py              ◻      drop/flag findings citing chunks that weren't retrieved
+│  ├─ retrieval/                            ✅      ONLINE: search the index + verify citations
+│  │  ├─ text_embedder.py                   ✅      Embedder protocol + fastembed bge-small
+│  │  ├─ vector_store.py                    ✅      KnowledgeIndex: Chroma add/search with pillar filter
+│  │  ├─ pillar_retriever.py                ✅      pillar-filtered top-k search; default_retriever()
+│  │  ├─ review_evidence.py                 ✅      design → per-pillar queries → evidence block for prompts
+│  │  ├─ citation_validator.py              ✅      drop citations that weren't retrieved; list uncited findings
+│  │  └─ retrieval_check.py                 ✅      5 hand-written probes (Step 4 check)
 │  │
 │  ├─ agents/                               THE REVIEW BOARD: module + prompt + test per agent
 │  │  ├─ agent_base.py                      ✅      load prompt → get_llm(role) → structured output
@@ -144,7 +149,8 @@ ArchOptimize-AI/
 │     └─ demo_mode.py                       ◻      serves precomputed reviews (no key needed)
 │
 ├─ data/
-│  ├─ knowledge_index/                      ◻ [4]  prebuilt Chroma index (shipped; Git LFS if > 10 MB)
+│  ├─ knowledge_index/                      ✅      built Chroma index (gitignored; uploaded to the Space, D26)
+│  ├─ source_docs/                          ✅      downloaded PDFs (gitignored)
 │  └─ demo_reviews/                         ◻ [9]  precomputed review JSONs for demo mode
 │
 ├─ evaluation/                              ✅      QUALITY MEASUREMENT (not shipped to users)

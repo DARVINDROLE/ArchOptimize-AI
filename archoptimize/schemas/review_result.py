@@ -10,6 +10,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from archoptimize.schemas.doc_chunk import DocChunk
 from archoptimize.schemas.finding import Finding
 
 
@@ -60,5 +61,11 @@ class ReviewResult(BaseModel):
     )
     input_flagged: bool = Field(
         default=False, description="True if the input guard suspected a prompt-injection attempt."
+    )
+    sources: list[DocChunk] = Field(
+        default_factory=list, description="Documentation chunks that were retrieved (citable)."
+    )
+    uncited_finding_ids: list[str] = Field(
+        default_factory=list, description="Findings without a valid citation (shown as such)."
     )
     tokens_used: int | None = Field(default=None, ge=0)

@@ -24,3 +24,10 @@ evaluation/results/*.json
 .idea/
 Thumbs.db
 .DS_Store
+
+# Downloaded source PDFs (re-downloadable; only the built index is shipped)
+data/source_docs/
+# Built documentation index (25 MB; built locally / in CI and uploaded to the HF Space, D26)
+data/knowledge_index/
+# Embedding model cache
+.cache/

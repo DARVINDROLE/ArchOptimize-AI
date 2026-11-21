@@ -34,8 +34,19 @@ def _baseline(submission: DesignSubmission) -> ReviewResult:
     return review_baseline(submission)
 
 
+def _baseline_rag(submission: DesignSubmission) -> ReviewResult:
+    from archoptimize.agents.baseline_reviewer import review_baseline
+    from archoptimize.retrieval.pillar_retriever import default_retriever
+
+    return review_baseline(submission, retriever=default_retriever())
+
+
 # Reviewers grow with the project: Step 5 adds "board", ...
-REVIEWERS: dict[str, Reviewer] = {"rubber_stamp": rubber_stamp, "baseline": _baseline}
+REVIEWERS: dict[str, Reviewer] = {
+    "rubber_stamp": rubber_stamp,
+    "baseline": _baseline,
+    "baseline_rag": _baseline_rag,
+}
 
 RESULTS_DIR = EVALUATION_DIR / "results"
 
@@ -80,13 +91,14 @@ def format_table(summary: EvalSummary, scores: list[CaseScore]) -> str:
             f"{(s.verdict or 'ERROR'):<22} {'✓' if s.verdict_correct else '✗':<3} {behaviours}"
             + (f"  [{s.error}]" if s.error else "")
         )
-    b = summary.behaviour_pass_rate
+    b, c = summary.behaviour_pass_rate, summary.citation_rate
     lines += [
         "",
         f"reviewer={summary.reviewer}  cases={summary.cases}  "
         f"flaw recall={summary.flaw_recall:.0%} ({summary.flaws_found}/{summary.flaws_planted})  "
         f"false alarms={summary.false_alarms}  verdict accuracy={summary.verdict_accuracy:.0%}  "
         f"behaviours={'n/a' if b is None else f'{b:.0%}'}  "
+        f"cited={'n/a' if c is None else f'{c:.0%}'}  "
         f"avg latency={summary.avg_latency_seconds:.2f}s  "
         f"avg tokens={summary.avg_tokens if summary.avg_tokens is not None else 'n/a'}  "
         f"errors={summary.errors}",
