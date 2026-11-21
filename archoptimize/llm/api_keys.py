@@ -7,20 +7,11 @@ Locally, keys come from `.env`; in the deployed app the UI passes them per sessi
 from __future__ import annotations
 
 import os
-import re
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, SecretStr
 
 _PLACEHOLDER = "your_key_here"
-
-# Shapes of real keys, used to scrub error messages before they are shown anywhere.
-_KEY_PATTERN = re.compile(r"(gsk_[A-Za-z0-9]{8,}|sk-or-[A-Za-z0-9-]{8,}|sk-[A-Za-z0-9_-]{16,})")
-
-
-def redact(text: str) -> str:
-    """Replace anything that looks like an API key with a marker."""
-    return _KEY_PATTERN.sub("[redacted-key]", text)
 
 
 def _secret(value: str | None) -> SecretStr | None:

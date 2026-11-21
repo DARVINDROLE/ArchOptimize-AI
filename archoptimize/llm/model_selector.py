@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Sequence
 
-from arb.providers.config import RoleRequirements
-from arb.providers.model_catalog import ModelInfo
+from archoptimize.llm.model_catalog import ModelInfo
+from archoptimize.llm.role_config import RoleRequirements
 
 
 def meets_requirements(m: ModelInfo, req: RoleRequirements) -> bool:

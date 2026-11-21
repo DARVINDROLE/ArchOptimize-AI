@@ -1,0 +1,60 @@
+{
+  "data": [
+    {
+      "id": "qwen/qwen3-big:free",
+      "name": "Qwen3 Big (free)",
+      "context_length": 262000,
+      "architecture": {"input_modalities": ["text"], "output_modalities": ["text"]},
+      "pricing": {"prompt": "0", "completion": "0"},
+      "supported_parameters": ["structured_outputs", "tools"]
+    },
+    {
+      "id": "google/gemma-vision:free",
+      "name": "Gemma Vision (free)",
+      "context_length": 96000,
+      "architecture": {"input_modalities": ["text", "image"], "output_modalities": ["text"]},
+      "pricing": {"prompt": "0", "completion": "0"},
+      "supported_parameters": ["structured_outputs", "tools"]
+    },
+    {
+      "id": "openai/gpt-oss-120b:free",
+      "name": "gpt-oss-120b (free)",
+      "context_length": 131000,
+      "architecture": {"input_modalities": ["text"], "output_modalities": ["text"]},
+      "pricing": {"prompt": "0", "completion": "0"},
+      "supported_parameters": ["structured_outputs", "tools"]
+    },
+    {
+      "id": "mistral/small-json-mode:free",
+      "name": "JSON mode only (free)",
+      "context_length": 128000,
+      "architecture": {"input_modalities": ["text"], "output_modalities": ["text"]},
+      "pricing": {"prompt": "0", "completion": "0"},
+      "supported_parameters": ["response_format"]
+    },
+    {
+      "id": "meta-llama/tiny:free",
+      "name": "Tiny context (free)",
+      "context_length": 8000,
+      "architecture": {"input_modalities": ["text"], "output_modalities": ["text"]},
+      "pricing": {"prompt": "0", "completion": "0"},
+      "supported_parameters": ["structured_outputs", "tools"]
+    },
+    {
+      "id": "anthropic/paid-model",
+      "name": "Paid model",
+      "context_length": 200000,
+      "architecture": {"input_modalities": ["text"], "output_modalities": ["text"]},
+      "pricing": {"prompt": "0.000003", "completion": "0.000015"},
+      "supported_parameters": ["structured_outputs", "tools"]
+    },
+    {
+      "id": "openrouter/auto",
+      "name": "Auto router",
+      "context_length": 2000000,
+      "architecture": {"input_modalities": ["text"], "output_modalities": ["text"]},
+      "pricing": {"prompt": "-1", "completion": "-1"},
+      "supported_parameters": ["structured_outputs", "tools"]
+    }
+  ]
+}

@@ -9,7 +9,7 @@ from __future__ import annotations
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
-from arb.providers.config import OpenRouterSettings
+from archoptimize.llm.role_config import OpenRouterSettings
 
 
 def make_openrouter_chat(

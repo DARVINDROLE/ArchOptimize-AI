@@ -2,7 +2,7 @@
 
 How a call is routed:
 1. Build an ordered list of candidate models for the role:
-   - Groq role:       its Groq models from models.yaml (e.g. 120b -> 20b),
+   - Groq role:       its Groq models from llm_roles.yaml (e.g. 120b -> 20b),
                       then (fallback) up to N free OpenRouter models that fit the role.
    - OpenRouter role: up to N free OpenRouter models picked from the live catalog,
                       then (critic only) a different-family live Groq model.
@@ -22,19 +22,25 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from arb.providers.config import ModelSettings, RoleConfig, RoleRequirements, default_settings
-from arb.providers.cooldown import Cooldown
-from arb.providers.groq_client import make_groq_chat
-from arb.providers.keys import ProviderKeys, redact
-from arb.providers.model_catalog import (
+from archoptimize.core.secret_redaction import redact
+from archoptimize.llm.api_keys import ProviderKeys
+from archoptimize.llm.groq_client import make_groq_chat
+from archoptimize.llm.model_catalog import (
     CachedCatalog,
     ModelInfo,
     family_of,
     fetch_groq_models,
     fetch_openrouter_models,
 )
-from arb.providers.openrouter_client import make_openrouter_chat
-from arb.providers.selector import select_models
+from archoptimize.llm.model_cooldown import Cooldown
+from archoptimize.llm.model_selector import select_models
+from archoptimize.llm.openrouter_client import make_openrouter_chat
+from archoptimize.llm.role_config import (
+    ModelSettings,
+    RoleConfig,
+    RoleRequirements,
+    default_settings,
+)
 
 log = logging.getLogger(__name__)
 

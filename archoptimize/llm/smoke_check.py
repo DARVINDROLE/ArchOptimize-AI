@@ -1,6 +1,6 @@
 """Live check of the provider layer (Step 0 "Done when").
 
-Run:  uv run python -m arb.providers.smoke
+Run:  uv run python -m archoptimize.llm.smoke_check
 Needs GROQ_API_KEY (and OPENROUTER_API_KEY for the OpenRouter checks) in .env.
 Prints model names and replies only. Never prints keys.
 """
@@ -11,9 +11,10 @@ import sys
 
 from pydantic import BaseModel
 
-from arb.providers.keys import ProviderKeys, redact
-from arb.providers.model_catalog import fetch_groq_models
-from arb.providers.router import get_router
+from archoptimize.core.secret_redaction import redact
+from archoptimize.llm.api_keys import ProviderKeys
+from archoptimize.llm.model_catalog import fetch_groq_models
+from archoptimize.llm.model_router import get_router
 
 
 class Ping(BaseModel):
@@ -28,8 +29,10 @@ def _section(title: str) -> None:
 def main() -> int:
     keys = ProviderKeys.from_env()
     router = get_router()
-    print(f"Groq key: {'set' if keys.groq else 'MISSING'} | "
-          f"OpenRouter key: {'set' if keys.openrouter else 'missing (optional)'}")
+    print(
+        f"Groq key: {'set' if keys.groq else 'MISSING'} | "
+        f"OpenRouter key: {'set' if keys.openrouter else 'missing (optional)'}"
+    )
     failed = False
 
     _section("1. Groq text reply (role: reviewer)")

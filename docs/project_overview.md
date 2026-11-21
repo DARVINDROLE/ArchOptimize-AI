@@ -2,7 +2,7 @@
 
 The complete picture of the idea: how it flows, what each part does, how it behaves in every scenario, and what the **MVP** is.
 
-- `PROJECT_BRIEF.md` covers **what and why**: the problem, goals and requirements.
+- `docs/project_brief.md` covers **what and why**: the problem, goals and requirements.
 - This file covers **how the idea works**, from end to end.
 - `PLAN.md` covers **build steps, progress and decisions**.
 
@@ -100,14 +100,14 @@ Every LLM call goes through `get_llm(role)`. Groq is tried first; if it fails, t
 
 For each part: **what it does · input → output · how · what can go wrong · MVP?**
 
-### 3.1 Provider layer (`arb/providers/`)
+### 3.1 LLM access layer (`archoptimize/llm/`)
 - **Does:** the only way any agent talks to an LLM: `get_llm(role)`.
 - **In → out:** role name (`reviewer`, `architect`, `critic`, `vision`…) → ready-to-use chat model.
-- **How:** reads `models.yaml`, so each role maps to a Groq model. Groq is called with backoff on 429 and drops from 120b to 20b if needed. For the critic, vision and fallback roles, it fetches the OpenRouter model list (cached 1 h), keeps only free models that meet the role's needs, ranks them, and tries up to 3 with a cooldown after each failure.
+- **How:** reads `config/llm_roles.yaml`, so each role maps to a Groq model. Groq is called with backoff on 429 and drops from 120b to 20b if needed. For the critic, vision and fallback roles, it fetches the OpenRouter model list (cached 1 h), keeps only free models that meet the role's needs, ranks them, and tries up to 3 with a cooldown after each failure.
 - **Can go wrong:** an invalid key, rate limits, a free model that disappears, or a model that returns bad JSON. In each case it retries or tries the next candidate, then shows a clear error.
 - **MVP:** ✅ Yes. Everything else depends on it.
 
-### 3.2 Data contracts (`arb/schemas/`)
+### 3.2 Data contracts (`archoptimize/schemas/`)
 - **Does:** defines the shared language: `Component`, `Edge`, `ComponentGraph`, `Requirements`, `Finding`, `Candidate`, `Review`.
 - **Why it matters:** agents, diagrams, calculators, diffs and eval all read the same typed objects, and no free text is parsed anywhere.
 - **MVP:** ✅ Yes.
@@ -118,7 +118,7 @@ For each part: **what it does · input → output · how · what can go wrong ·
 - **Can go wrong:** a false positive on legitimate text. In that case it **flags** the input and asks the user to confirm rather than hard-blocking.
 - **MVP:** ✅ Yes (eval case 5 depends on it).
 
-### 3.4 Normalizer (`arb/normalize/`)
+### 3.4 Design parsing (`archoptimize/design_parsing/`)
 - **Does:** converts any of the 3 input types into `ComponentGraph` + `Requirements`.
 - **YAML:** plain parser plus Pydantic validation, with no LLM. Fast and exact.
 - **Free text:** an LLM with structured output. Anything not stated goes into `assumptions` and is never silently invented.
@@ -143,7 +143,7 @@ For each part: **what it does · input → output · how · what can go wrong ·
 - **Can go wrong:** an invented citation (dropped by the citation check), a duplicate finding across pillars (merged in the Chair step), or a finding with no evidence (dropped).
 - **MVP:** ✅ Yes, all 4 + PCI.
 
-### 3.8 RAG (`arb/ingest/`, `arb/rag/`)
+### 3.8 RAG (`archoptimize/knowledge_base/`, `archoptimize/retrieval/`)
 - **Does:** gives reviewers authoritative AWS guidance to cite.
 - **Offline (built once):** download the 6 Well-Architected pillar docs and the PCI-on-AWS guide, clean them, split into ~500-token chunks tagged `{pillar, doc, section, url, chunk_id}`, embed with fastembed bge-small, and save the Chroma index to `data/index/`. The index ships with the app.
 - **Online:** a pillar-filtered search, top-k 4.
@@ -151,7 +151,7 @@ For each part: **what it does · input → output · how · what can go wrong ·
 - **Can go wrong:** irrelevant chunks. Eval measures this; add a reranker only if needed.
 - **MVP:** ✅ Yes.
 
-### 3.9 Calculators / MCP tools (`arb/mcp_server/`)
+### 3.9 Calculators / MCP tools (`archoptimize/calculators/`, `archoptimize/mcp_server/`)
 - **Does:** produces all the numbers, so the LLM never does arithmetic.
   - `get_price(service, type, region)` reads a JSON price snapshot.
   - `monthly_cost(items)` adds up the monthly bill.
@@ -180,7 +180,7 @@ For each part: **what it does · input → output · how · what can go wrong ·
   - A plain statement when the requirements conflict or the input was too vague.
 - **MVP:** ✅ Yes.
 
-### 3.13 Rendering (`arb/render/`)
+### 3.13 Reporting (`archoptimize/reporting/`)
 - **Does:** draws the Mermaid diagram straight from the graph, so it's deterministic and the LLM never draws it. It also builds the before/after diff and the change list, and writes a Markdown report.
 - **MVP:** Mermaid + Markdown report ✅ · PDF ⏭ post-MVP.
 
@@ -188,7 +188,7 @@ For each part: **what it does · input → output · how · what can go wrong ·
 - **Does:** key boxes (session only), input tabs, an editable parsed graph, a live agent stream, results, download, and demo mode, plus notices: "AI suggestion, not an approval" and "Don't paste confidential designs".
 - **MVP:** ✅ Yes. Model dropdowns from live lists are ⏭ post-MVP; config defaults are enough at first.
 
-### 3.15 Eval (`eval/`)
+### 3.15 Evaluation (`evaluation/`)
 - **Does:** 12–15 designs with planted flaws, each with an expected answer.
 - **Scoring:** a finding counts as a hit when its **pillar + component id** match a planted flaw. This is deterministic, with no judge LLM.
 - **Metrics:** flaw recall, false findings, verdict accuracy, latency, tokens.

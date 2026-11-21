@@ -2,7 +2,7 @@
 
 Retry on 429 (rate limit): the Groq SDK already retries 429/5xx with exponential backoff
 and honours the `retry-after` header; `max_retries` controls how many times.
-The 120b -> 20b fallback comes from the order of models in `models.yaml`.
+The 120b -> 20b fallback comes from the order of models in `llm_roles.yaml`.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from __future__ import annotations
 from langchain_groq import ChatGroq
 from pydantic import SecretStr
 
-from arb.providers.config import GroqSettings
+from archoptimize.llm.role_config import GroqSettings
 
 
 def make_groq_chat(

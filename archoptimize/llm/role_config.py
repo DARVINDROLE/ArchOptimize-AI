@@ -1,4 +1,4 @@
-"""Load `arb/config/models.yaml` into typed settings.
+"""Load `archoptimize/config/llm_roles.yaml` into typed settings.
 
 Keeping model IDs in YAML (not code) means we can swap models without touching agents.
 """
@@ -12,7 +12,7 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel, Field, model_validator
 
-DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "models.yaml"
+DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "llm_roles.yaml"
 
 Provider = Literal["groq", "openrouter"]
 

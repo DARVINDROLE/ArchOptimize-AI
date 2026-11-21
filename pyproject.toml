@@ -1,5 +1,5 @@
 [project]
-name = "arb"
+name = "archoptimize"
 version = "0.1.0"
 description = "Architecture Review Board agent: multi-agent review of cloud designs against requirements."
 readme = "README.md"
@@ -25,11 +25,12 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["arb"]
+packages = ["archoptimize"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+addopts = "-q --import-mode=importlib -m 'not live'"
+markers = ["live: calls real LLM APIs (needs keys in .env); run with -m live"]
 
 [tool.ruff]
 line-length = 100

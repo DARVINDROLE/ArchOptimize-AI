@@ -2,7 +2,7 @@
 
 A multi-agent AI system that reviews a system design against stated requirements, then proposes a revised design.
 Goal: personal learning (cover every concept), deployed publicly for **$0**.
-Problem statement, requirements and success criteria: see `PROJECT_BRIEF.md`.
+Problem statement, requirements and success criteria: see `docs/project_brief.md`. Structure: `docs/project_structure.md`.
 
 ---
 
@@ -44,7 +44,7 @@ Problem statement, requirements and success criteria: see `PROJECT_BRIEF.md`.
  └─────────────────────────────────────────────────────────────────────────────────┘
         │ get_llm(role)                          │ MCP (stdio)
         ▼                                        ▼
-  providers/ router                       mcp_server/ (prices.json, math tools)
+  llm/model_router                       mcp_server/ → calculators/ (prices, math)
   Groq (primary) ─fail─► OpenRouter (dynamic free model)
 ```
 
@@ -52,28 +52,7 @@ Problem statement, requirements and success criteria: see `PROJECT_BRIEF.md`.
 
 ## 3. Project structure
 
-```
-D:\ai agent\
-├─ arb/
-│  ├─ config/models.yaml          # role → provider + model (+ requirements)
-│  ├─ providers/                  # groq_client, openrouter_client, model_catalog, selector, router
-│  ├─ schemas/                    # graph, requirements, findings, candidate, review (Pydantic)
-│  ├─ normalize/                  # yaml_parser, text_parser, image_parser
-│  ├─ ingest/                     # fetch_docs, chunk, build_index
-│  ├─ rag/                        # retriever, citations (validation)
-│  ├─ agents/                     # guard, router, reviewers, architect, critic, chair, prompts/
-│  ├─ graph/                      # state.py, build.py (LangGraph)
-│  ├─ mcp_server/                 # server.py, data/prices.json
-│  ├─ render/                     # mermaid.py, report.py (Markdown/PDF)
-│  └─ storage/                    # history.py (session / HF Dataset)
-├─ data/index/                    # prebuilt Chroma index (shipped with app)
-├─ eval/                          # cases/*.yaml, expected/*.json, run_eval.py, results/
-├─ demo/                          # precomputed example reviews for demo mode
-├─ tests/
-├─ app.py                         # Gradio entry point (HF Spaces)
-├─ .env.example  .gitignore  pyproject.toml  requirements.txt  README.md
-└─ .github/workflows/             # tests + sync to HF Space
-```
+See **`docs/project_structure.md`**: full folder/file tree, naming rules, layer import rules, conventions.
 
 ---
 
@@ -84,12 +63,12 @@ Each step: **Goal · Tasks · Done when**. Don't start a step until the previous
 ### Step 0 — Setup & provider layer  *(concept: LLM APIs)*
 - Prereqs: Groq key, OpenRouter key (+ Privacy setting), GitHub account, optional `uv`.
 - Tasks: create project + venv, install deps, `.env` / `.env.example` / `.gitignore`, `git init`.
-- Build `providers/`:
+- Build `archoptimize/llm/`:
   - `groq_client` — retry with exponential backoff on 429, fallback `120b → 20b`.
   - `model_catalog` — fetch OpenRouter `/api/v1/models`, cache ~1 h, keep free models only.
   - `selector` — per use case filter (vision: image input; all: structured output; tools if needed; min context; Critic family ≠ Architect family), then rank.
   - `router.get_llm(role)` — Groq first; on failure try OpenRouter candidates (max 3, cooldown failed models).
-- **Done when:** `python -m arb.providers.smoke` prints a reply from Groq, from a dynamically chosen OpenRouter text model, and lists the selected vision model.
+- **Done when:** `python -m archoptimize.llm.smoke_check` prints a reply from Groq, from a dynamically chosen OpenRouter text model, and lists the selected vision model.
 
 ### Step 1 — Data contracts + YAML input + diagram  *(concept: structured data)*
 - Pydantic models: `Component` (type, AZs, replicas, data store, public?), `Edge` (sync/async, protocol), `ComponentGraph`, `Requirements` (SLO, RPS, budget, compliance, region, latency), `Finding` (pillar, severity, evidence, citation ids), `Candidate`, `Review`.
@@ -100,8 +79,8 @@ Each step: **Goal · Tasks · Done when**. Don't start a step until the previous
 ### Step 2 — Evaluation set first  *(concept: eval-driven development)*
 - Write 12–15 YAML designs with **planted flaws** + `expected/*.json` (flaw ids, pillar, expected verdict).
 - Must include: single-AZ DB vs 99.9%, public S3 + PCI, budget conflict, good design (should approve), prompt-injection doc, impossible requirements, vague design.
-- `eval/run_eval.py`: flaw recall, false findings, verdict accuracy, latency, tokens.
-- **Done when:** script runs (scores are 0 for now) and writes `eval/results/<date>.json`.
+- `evaluation/run_evaluation.py`: flaw recall, false findings, verdict accuracy, latency, tokens.
+- **Done when:** script runs (scores are 0 for now) and writes `evaluation/results/<date>.json`.
 
 ### Step 3 — Single-LLM baseline review  *(concept: prompting + structured output)*
 - One prompt: graph + requirements → `list[Finding]` + verdict.
@@ -168,7 +147,7 @@ Each step: **Goal · Tasks · Done when**. Don't start a step until the previous
 
 ---
 
-## 5. Test cases (in `eval/cases/`)
+## 5. Test cases (in `evaluation/test_designs/`)
 
 | # | Design | Expected |
 |---|---|---|
@@ -231,7 +210,7 @@ Update this after every step (tick the box, add date + one-line note). AI assist
 - [ ] Step 11 — Deploy
 - [ ] Step 12 — Harden & showcase
 
-**Current step:** Step 0 — code written (`arb/providers/`, tests, `models.yaml`); waiting on: Smart App Control off → run `uv run python -m pytest` → fresh keys in `.env` → `uv run python -m arb.providers.smoke`. **Prereqs status:** Python 3.12.10, Git 2.56, VS Code, uv 0.13.9 installed; `git init` done (no remote yet); `gh` CLI not installed.
+**Current step:** Step 0 — code written and restructured (`archoptimize/llm/`, `tests/unit/`, `config/llm_roles.yaml`, D25); waiting on: Smart App Control off → `uv run python -m pytest` → `uv run python -m archoptimize.llm.smoke_check`. **Prereqs status:** Python 3.12.10, Git 2.56, VS Code, uv 0.13.9; repo pushed to github.com/DARVINDROLE/ArchOptimize-AI; keys in `.env`.
 
 Eval results log (fill from Step 3 on):
 
@@ -264,9 +243,10 @@ Read before proposing alternatives — these were discussed and settled.
 | D16 | Chroma for MVP | Simple, file-based, ships with app | pgvector/Supabase later; Bedrock Knowledge Bases + OpenSearch (expensive) |
 | D17 | Re-ranking only if eval shows weak retrieval | Keep MVP simple | — |
 | D18 | Store short doc chunks + source links, cite them | AWS docs are copyrighted; personal non-commercial demo | Republishing full docs |
-| D19 | MVP = developed + deployed + public (see `PROJECT_OVERVIEW.md` §5); image input moves to post-MVP | User goal; free vision models unreliable | Image input in MVP |
+| D19 | MVP = developed + deployed + public (see `docs/project_overview.md` §5); image input moves to post-MVP | User goal; free vision models unreliable | Image input in MVP |
 | D20 | Public early: walking-skeleton Space at milestone M1 (weeks 1–2) | Surface HF Space issues while the app is small | Deploy only at Step 11 |
 | D21 | Critic without OpenRouter key → live Groq model of a different family (`function_calling`) | Keeps the review working with a Groq key only | Critic disabled |
 | D22 | Langfuse, Ragas, PDF export → post-MVP; calculators are plain Python first, then wrapped as MCP | Smaller MVP; correct numbers from day one | — |
 | D23 | 429 retry/backoff via the Groq/OpenAI SDK `max_retries` (honours `retry-after`) instead of tenacity | Same behaviour, less code | Custom tenacity wrapper |
 | D24 | `uv` for env/deps; Smart App Control turned off on the dev PC (it blocked native wheels like `xxhash`) | LangChain could not import with SAC on | WSL2, Codespaces |
+| D25 | Package `archoptimize/` with descriptive names and layered imports (`docs/project_structure.md`); docs in `docs/` | Readable, conventional structure; cheap to rename at Step 0 | `arb/` and generic names (`tools/`, `rag/`, `utils/`) |
