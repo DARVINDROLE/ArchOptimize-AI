@@ -256,11 +256,12 @@ class ModelRouter:
 
         if rc.provider == "groq":
             if use_groq:
-                out += [
-                    Candidate("groq", m, self.settings.groq.structured_method)
-                    for m in rc.models
-                    if not self._cooldowns["groq"].is_cooling(m)
-                ]
+                # Cooling models go LAST instead of being removed: a model that just failed
+                # for one agent may still be the only option for another.
+                cooling = self._cooldowns["groq"].is_cooling
+                ordered = [m for m in rc.models if not cooling(m)]
+                ordered += [m for m in rc.models if cooling(m)]
+                out += [Candidate("groq", m, self.settings.groq.structured_method) for m in ordered]
             if use_or and (rc.allow_fallback or only_provider == "openrouter"):
                 req = rc.requirements.model_copy(
                     update={

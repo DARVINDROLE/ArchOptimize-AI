@@ -41,11 +41,19 @@ def _baseline_rag(submission: DesignSubmission) -> ReviewResult:
     return review_baseline(submission, retriever=default_retriever())
 
 
-# Reviewers grow with the project: Step 5 adds "board", ...
+def _board(submission: DesignSubmission, redesign: bool = False) -> ReviewResult:
+    from archoptimize.retrieval.pillar_retriever import default_retriever
+    from archoptimize.review_workflow.workflow_runner import run_review
+
+    return run_review(submission, retriever=default_retriever(), redesign=redesign)
+
+
 REVIEWERS: dict[str, Reviewer] = {
     "rubber_stamp": rubber_stamp,
     "baseline": _baseline,
     "baseline_rag": _baseline_rag,
+    "board": _board,  # Step 5: multi-agent review only
+    "board_redesign": lambda s: _board(s, redesign=True),  # Step 6: + Architect/Critic loop
 }
 
 RESULTS_DIR = EVALUATION_DIR / "results"
@@ -99,7 +107,13 @@ def format_table(summary: EvalSummary, scores: list[CaseScore]) -> str:
         f"false alarms={summary.false_alarms}  verdict accuracy={summary.verdict_accuracy:.0%}  "
         f"behaviours={'n/a' if b is None else f'{b:.0%}'}  "
         f"cited={'n/a' if c is None else f'{c:.0%}'}  "
-        f"avg latency={summary.avg_latency_seconds:.2f}s  "
+        + (
+            f"redesigned={summary.redesigned_cases} fix rate="
+            f"{'n/a' if summary.fix_rate is None else f'{summary.fix_rate:.0%}'}  "
+            if summary.redesigned_cases
+            else ""
+        )
+        + f"avg latency={summary.avg_latency_seconds:.2f}s  "
         f"avg tokens={summary.avg_tokens if summary.avg_tokens is not None else 'n/a'}  "
         f"errors={summary.errors}",
     ]

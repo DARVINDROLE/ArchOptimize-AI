@@ -1,0 +1,5 @@
+Bookstore monolith. Customers reach a single EC2 m5.large app server over HTTPS; the server
+is public and runs in one availability zone. It stores orders in an RDS MySQL database
+(db.m5.large) in a single AZ, encrypted at rest, with automated backups. The order data
+is confidential. We need 99.9% availability, 500 requests per second at peak, a budget of
+$600 per month, an RPO of 15 minutes and an RTO of 60 minutes.

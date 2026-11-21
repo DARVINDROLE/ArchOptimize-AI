@@ -1,0 +1,5 @@
+Analytics dashboard for internal analysts. Analysts open a dashboard running on ECS Fargate
+(2 tasks across 2 availability zones, public, HTTPS). The dashboard queries an RDS
+PostgreSQL db.m5.large database deployed in 2 AZs with encryption at rest and backups.
+The database was made publicly accessible so analysts can also connect to it directly with
+SQL from home. Data is internal. Needs 99.5% availability, 20 requests per second, $700/month.

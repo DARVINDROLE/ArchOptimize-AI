@@ -3,15 +3,21 @@
 # Groq is the primary provider. OpenRouter is used only for: vision, critic, and fallback.
 # OpenRouter models are NEVER listed here: they are picked at runtime from the live catalog
 # (free only -> filter by the role's requirements -> rank -> try up to `max_attempts`).
+#
+# Groq free tier: each model has its OWN budget of ~8,000 tokens/minute (and 1,000
+# requests/day). A reviewer call uses ~3-4k tokens, so the parallel reviewers start on
+# DIFFERENT models and fall back to the other Groq models before trying OpenRouter.
 
 groq:
   max_retries: 2          # the Groq SDK retries 429/5xx itself with exponential backoff
   timeout_seconds: 60
-  cooldown_seconds: 60    # after a model fails, skip it for this long
+  cooldown_seconds: 60    # after a model fails, try it last for this long
   live_fallback_limit: 2  # critic-without-OpenRouter: how many live Groq models to try
 
 openrouter:
   max_attempts: 3         # at most this many OpenRouter models per call
+  max_retries: 0          # on failure move to the next free model instead of waiting
+  timeout_seconds: 45
   cooldown_seconds: 300
   catalog_ttl_seconds: 3600
   fallback_min_context: 32000
@@ -19,11 +25,18 @@ openrouter:
 
 roles:
   router:     {provider: groq, models: [openai/gpt-oss-20b]}
-  normalizer: {provider: groq, models: [openai/gpt-oss-20b]}
-  reviewer:   {provider: groq, models: [openai/gpt-oss-20b]}
+  normalizer: {provider: groq, models: [openai/gpt-oss-120b, openai/gpt-oss-20b]}
+  reviewer:   {provider: groq, models: [openai/gpt-oss-20b, qwen/qwen3.8-27b]}  # generic / smoke check
   architect:  {provider: groq, models: [openai/gpt-oss-120b, openai/gpt-oss-20b]}
-  chair:      {provider: groq, models: [openai/gpt-oss-120b, openai/gpt-oss-20b]}
+  chair:      {provider: groq, models: [openai/gpt-oss-120b, openai/gpt-oss-20b, qwen/qwen3.8-27b]}
   baseline_reviewer: {provider: groq, models: [openai/gpt-oss-120b, openai/gpt-oss-20b]}  # Step 3 yardstick
+
+  # Specialist reviewers: spread across the three Groq models.
+  security_reviewer:       {provider: groq, models: [openai/gpt-oss-20b, qwen/qwen3.8-27b, openai/gpt-oss-120b]}
+  reliability_reviewer:    {provider: groq, models: [qwen/qwen3.8-27b, openai/gpt-oss-20b, openai/gpt-oss-120b]}
+  cost_reviewer:           {provider: groq, models: [openai/gpt-oss-120b, qwen/qwen3.8-27b, openai/gpt-oss-20b]}
+  scalability_reviewer:    {provider: groq, models: [openai/gpt-oss-20b, qwen/qwen3.8-27b, openai/gpt-oss-120b]}
+  pci_compliance_reviewer: {provider: groq, models: [qwen/qwen3.8-27b, openai/gpt-oss-120b, openai/gpt-oss-20b]}
 
   guard:      # a classifier, not a chat model: no structured output, no fallback
     provider: groq

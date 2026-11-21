@@ -63,6 +63,8 @@ class CaseScore:
     behaviours: dict[str, bool] = field(default_factory=dict)
     findings_total: int = 0
     findings_cited: int = 0  # findings with at least one valid (retrieved) citation
+    redesigned: bool = False
+    flaws_fixed: int = 0  # found flaws the re-review of the revised design no longer finds
     latency_seconds: float = 0.0
     tokens_used: int | None = None
     error: str | None = None
@@ -94,6 +96,15 @@ def score_case(
     explained = set(planted.values()) | set(secondary.values())
     unmatched = [f for i, f in enumerate(result.findings) if i not in explained]
 
+    redesigned = result.revised_design is not None
+    still_open = (
+        match_findings(
+            [f for f in expected.planted_flaws if f.id in planted], result.remaining_issues
+        )
+        if redesigned
+        else {}
+    )
+
     return CaseScore(
         case_id=case.case_id,
         flaws_planted=len(expected.planted_flaws),
@@ -106,6 +117,8 @@ def score_case(
         behaviours={b.value: _behaviour_passed(b, result) for b in expected.behaviours},
         findings_total=len(result.findings),
         findings_cited=sum(1 for f in result.findings if f.citation_chunk_ids),
+        redesigned=redesigned,
+        flaws_fixed=len(planted) - len(still_open) if redesigned else 0,
         latency_seconds=round(latency_seconds, 3),
         tokens_used=result.tokens_used,
         error=error,
@@ -126,6 +139,8 @@ class EvalSummary:
     avg_latency_seconds: float
     avg_tokens: float | None
     errors: int
+    redesigned_cases: int = 0
+    fix_rate: float | None = None  # fixed / found flaws, over redesigned cases
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -138,6 +153,8 @@ def summarize(reviewer: str, scores: list[CaseScore]) -> EvalSummary:
     behaviour_results = [ok for s in scores for ok in s.behaviours.values()]
     tokens = [s.tokens_used for s in scores if s.tokens_used is not None]
     total_findings = sum(s.findings_total for s in scores)
+    redesigned = [s for s in scores if s.redesigned]
+    found_in_redesigned = sum(s.flaws_found for s in redesigned)
     return EvalSummary(
         reviewer=reviewer,
         cases=n,
@@ -157,4 +174,10 @@ def summarize(reviewer: str, scores: list[CaseScore]) -> EvalSummary:
         avg_latency_seconds=round(sum(s.latency_seconds for s in scores) / n, 3) if n else 0.0,
         avg_tokens=round(sum(tokens) / len(tokens), 1) if tokens else None,
         errors=sum(1 for s in scores if s.error),
+        redesigned_cases=len(redesigned),
+        fix_rate=(
+            round(sum(s.flaws_fixed for s in redesigned) / found_in_redesigned, 3)
+            if found_in_redesigned
+            else None
+        ),
     )

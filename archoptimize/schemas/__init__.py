@@ -11,10 +11,28 @@ from archoptimize.schemas.component_graph import (
 )
 from archoptimize.schemas.design_submission import DesignSubmission
 from archoptimize.schemas.finding import Finding, Pillar, Severity
+from archoptimize.schemas.pillar_review import (
+    GuardResult,
+    PillarReview,
+    PillarReviewDraft,
+    PillarScore,
+)
 from archoptimize.schemas.requirements import ComplianceStandard, Requirements
-from archoptimize.schemas.review_result import ReviewDraft, ReviewResult, Verdict
+from archoptimize.schemas.review_result import (
+    ChairDraft,
+    ReviewDraft,
+    ReviewResult,
+    SeverityAdjustment,
+    Verdict,
+)
 
 __all__ = [
+    "ChairDraft",
+    "GuardResult",
+    "PillarReview",
+    "PillarReviewDraft",
+    "PillarScore",
+    "SeverityAdjustment",
     "AutoscalingConfig",
     "ComplianceStandard",
     "Component",

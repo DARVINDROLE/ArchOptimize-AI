@@ -72,8 +72,15 @@ def _label(graph: ComponentGraph, component_id: str) -> str:
     return "<br/>".join(lines)
 
 
-def to_mermaid(graph: ComponentGraph, direction: str = "LR") -> str:
-    """Return Mermaid flowchart source for the graph (without ``` fences)."""
+def to_mermaid(
+    graph: ComponentGraph,
+    direction: str = "LR",
+    *,
+    added: set[str] | frozenset[str] = frozenset(),
+    changed: set[str] | frozenset[str] = frozenset(),
+) -> str:
+    """Return Mermaid flowchart source for the graph (without ``` fences).
+    `added` / `changed` component ids are highlighted (green / amber) in "after" diagrams."""
     if direction not in {"LR", "TB", "RL", "BT"}:
         raise ValueError(f"unsupported direction: {direction}")
     ids = _node_ids(graph)
@@ -95,9 +102,23 @@ def to_mermaid(graph: ComponentGraph, direction: str = "LR") -> str:
     if public:
         out.append("    classDef public stroke:#d33,stroke-width:2px")
         out.append(f"    class {','.join(public)} public")
+    for name, members, style in (
+        ("added", added, "fill:#d4f7dc,stroke:#1a7f37"),
+        ("changed", changed, "fill:#fff4ce,stroke:#9a6700"),
+    ):
+        nodes = [ids[c] for c in sorted(members) if c in ids]
+        if nodes:
+            out.append(f"    classDef {name} {style}")
+            out.append(f"    class {','.join(nodes)} {name}")
     return "\n".join(out)
 
 
-def to_mermaid_markdown(graph: ComponentGraph, direction: str = "LR") -> str:
+def to_mermaid_markdown(
+    graph: ComponentGraph,
+    direction: str = "LR",
+    *,
+    added: set[str] | frozenset[str] = frozenset(),
+    changed: set[str] | frozenset[str] = frozenset(),
+) -> str:
     """Mermaid wrapped in a ```mermaid block, ready for Markdown (GitHub, Gradio)."""
-    return f"```mermaid\n{to_mermaid(graph, direction)}\n```"
+    return f"```mermaid\n{to_mermaid(graph, direction, added=added, changed=changed)}\n```"

@@ -1,5 +1,8 @@
 """A single review finding. Reviewers return a list of these (structured output).
 
+Length limits are generous on purpose: Groq validates structured output strictly, and a
+too-tight limit makes a good answer fail as invalid JSON.
+
 Field descriptions are sent to the LLM as part of the JSON schema, so they are written
 as instructions.
 """
@@ -48,20 +51,20 @@ _SEVERITY_RANK = {
 class Finding(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    id: str = Field(min_length=1, max_length=20, description="Short id, e.g. 'REL-001'.")
+    id: str = Field(min_length=1, max_length=40, description="Short id, e.g. 'REL-001'.")
     pillar: Pillar
     severity: Severity
-    title: str = Field(min_length=1, max_length=120, description="One-line summary.")
+    title: str = Field(min_length=1, max_length=200, description="One-line summary.")
     component_ids: list[str] = Field(
         default_factory=list,
         description="Ids of the affected components from the design (empty = whole system).",
     )
     evidence: str = Field(
         min_length=1,
-        max_length=1000,
+        max_length=2000,
         description="Why this is a problem, pointing at concrete facts in the design.",
     )
-    recommendation: str = Field(min_length=1, max_length=1000, description="What to change.")
+    recommendation: str = Field(min_length=1, max_length=2000, description="What to change.")
     citation_chunk_ids: list[str] = Field(
         default_factory=list,
         description="Ids of the retrieved documentation chunks that support this finding.",

@@ -1,0 +1,6 @@
+Payments API for card payments, which must be PCI DSS compliant. Shoppers call a public
+API Gateway over HTTPS. API Gateway invokes a Lambda "charge" function running across 3
+availability zones. The function writes payments to a DynamoDB table (3 AZs, backups on,
+NOT encrypted at rest) that holds cardholder data, and writes receipt PDFs containing full
+card numbers to an S3 bucket that is public and not encrypted. Target: 99.9% availability,
+200 requests/second peak, $1,500/month.

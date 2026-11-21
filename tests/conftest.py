@@ -26,6 +26,12 @@ class FakeClock:
         return self.now
 
 
+@pytest.fixture(autouse=True)
+def local_calculators(monkeypatch):
+    """Unit tests call the calculators in-process; test_calculator_mcp.py covers real MCP."""
+    monkeypatch.setenv("ARCHOPTIMIZE_CALCULATORS", "local")
+
+
 @pytest.fixture
 def fake_clock() -> FakeClock:
     return FakeClock()

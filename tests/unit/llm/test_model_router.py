@@ -122,8 +122,20 @@ def test_failed_model_is_skipped_and_put_on_cooldown(make_router):
 
     assert llm.invoke("hi") == "reply"
     assert llm.last_candidate.model == "openai/gpt-oss-20b"
-    # the next request starts with 20b because 120b is cooling down
-    assert router.candidates_for("architect", KEYS_GROQ_ONLY)[0].model == "openai/gpt-oss-20b"
+    # the next request starts with 20b because 120b is cooling down; 120b is tried last
+    models = [c.model for c in router.candidates_for("architect", KEYS_GROQ_ONLY)]
+    assert models == ["openai/gpt-oss-20b", "openai/gpt-oss-120b"]
+
+
+def test_a_cooling_model_is_still_used_when_it_is_the_only_one(make_router):
+    router = make_router({"openai/gpt-oss-20b": HttpError(429)})
+    first = router.get_llm("router", KEYS_GROQ_ONLY)  # a role with a single model
+    with pytest.raises(AllModelsFailedError):
+        first.invoke("hi")
+    # another agent asking right after still gets a candidate (not "no model available")
+    assert [c.model for c in router.candidates_for("router", KEYS_GROQ_ONLY)] == [
+        "openai/gpt-oss-20b"
+    ]
 
 
 def test_auth_error_skips_rest_of_provider(make_router):
