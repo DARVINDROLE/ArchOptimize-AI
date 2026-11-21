@@ -1,0 +1,40 @@
+# Role -> provider + model config. Model IDs live ONLY here (never in code).
+#
+# Groq is the primary provider. OpenRouter is used only for: vision, critic, and fallback.
+# OpenRouter models are NEVER listed here: they are picked at runtime from the live catalog
+# (free only -> filter by the role's requirements -> rank -> try up to `max_attempts`).
+
+groq:
+  max_retries: 2          # the Groq SDK retries 429/5xx itself with exponential backoff
+  timeout_seconds: 60
+  cooldown_seconds: 60    # after a model fails, skip it for this long
+  live_fallback_limit: 2  # critic-without-OpenRouter: how many live Groq models to try
+
+openrouter:
+  max_attempts: 3         # at most this many OpenRouter models per call
+  cooldown_seconds: 300
+  catalog_ttl_seconds: 3600
+  fallback_min_context: 32000
+  prefer: []              # optional substrings ranked first, e.g. ["qwen", "gemma"]
+
+roles:
+  router:     {provider: groq, models: [openai/gpt-oss-20b]}
+  normalizer: {provider: groq, models: [openai/gpt-oss-20b]}
+  reviewer:   {provider: groq, models: [openai/gpt-oss-20b]}
+  architect:  {provider: groq, models: [openai/gpt-oss-120b, openai/gpt-oss-20b]}
+  chair:      {provider: groq, models: [openai/gpt-oss-120b, openai/gpt-oss-20b]}
+
+  guard:      # a classifier, not a chat model: no structured output, no fallback
+    provider: groq
+    models: [meta-llama/llama-prompt-guard-2-86m]
+    allow_fallback: false
+    requirements: {structured_output: false}
+
+  critic:     # must be a different model family than the Architect (avoids self-bias)
+    provider: openrouter
+    groq_fallback: true   # no OpenRouter key / no fit -> a different-family Groq model
+    requirements: {structured_output: true, min_context: 64000, different_family_from: architect}
+
+  vision:
+    provider: openrouter
+    requirements: {image_input: true, structured_output: true}
