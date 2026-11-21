@@ -255,7 +255,9 @@ class ModelRouter:
             if use_or:
                 out += self._openrouter_candidates(rc.requirements, exclude)
             if use_groq and rc.groq_fallback and keys.groq is not None:
-                out += self._groq_live_candidates(keys.groq.get_secret_value(), exclude)
+                out += self._groq_live_candidates(
+                    keys.groq.get_secret_value(), exclude, rc.requirements.min_context
+                )
         return out
 
     def openrouter_models(self) -> list[ModelInfo]:
@@ -284,7 +286,9 @@ class ModelRouter:
         )
         return [Candidate("openrouter", m.id, "json_schema") for m in chosen]
 
-    def _groq_live_candidates(self, api_key: str, exclude: set[str]) -> list[Candidate]:
+    def _groq_live_candidates(
+        self, api_key: str, exclude: set[str], min_context: int = 0
+    ) -> list[Candidate]:
         try:
             models = self._groq_catalog.get(lambda: self._groq_fetch(api_key))
         except Exception as exc:
@@ -295,6 +299,7 @@ class ModelRouter:
             m
             for m in models
             if m.family not in exclude
+            and m.context_length >= min_context
             and not any(p in m.id.lower() for p in patterns)
             and not self._cooldowns["groq"].is_cooling(m.id)
         ]

@@ -196,7 +196,7 @@ Each step: **Goal · Tasks · Done when**. Don't start a step until the previous
 
 Update this after every step (tick the box, add date + one-line note). AI assistants read this to know where we are.
 
-- [ ] Step 0 — Setup & provider layer — code + unit tests done; live smoke check blocked by Smart App Control
+- [x] Step 0 — Setup & provider layer — 2026-11-22: `smoke_check` OK (Groq 20b text + 120b structured output; OpenRouter free model chosen at runtime with 429 fallback; vision/critic candidates listed); 94 unit + 2 live tests. Fix: Groq live fallback now honours `min_context`.
 - [x] Step 1 — Data contracts + YAML input + diagram — 2026-11-22: schemas (ComponentGraph, Requirements, Finding, DesignSubmission), safe YAML parser (size cap, no aliases, located errors), Mermaid renderer, `python -m archoptimize.cli preview`; 65 unit tests. `CandidateDesign`/`ReviewResult` deferred to Steps 5–6 where they're first used.
 - [x] Step 2 — Evaluation set — 2026-11-22: 15 planted-flaw designs + answer keys (19 flaws, secondary issues, behaviour checks), scoring (recall, false alarms, verdict accuracy, behaviours, latency, tokens), `python -m evaluation.run_evaluation`; rubber-stamp floor recorded.
 - [ ] Step 3 — Single-LLM baseline
@@ -210,7 +210,7 @@ Update this after every step (tick the box, add date + one-line note). AI assist
 - [ ] Step 11 — Deploy
 - [ ] Step 12 — Harden & showcase
 
-**Current step:** Step 3 (single-LLM baseline) — needs LangChain, so blocked until Smart App Control is off. Open from Step 0: turn Smart App Control off → `uv run python -m pytest` (router tests) → `uv run python -m archoptimize.llm.smoke_check`. **Prereqs status:** Python 3.12.10, Git 2.56, VS Code, uv 0.13.9; repo github.com/DARVINDROLE/ArchOptimize-AI; keys in `.env`.
+**Current step:** Step 3 (single-LLM baseline). **Prereqs status:** Python 3.12.10, Git 2.56, VS Code, uv 0.13.9; repo github.com/DARVINDROLE/ArchOptimize-AI; keys in `.env`.
 
 Eval results log (fill from Step 3 on):
 

@@ -25,6 +25,7 @@ GROQ_LIVE_MODELS = [
     ModelInfo(id="qwen/qwen3-32b", context_length=131_000),
     ModelInfo(id="meta-llama/llama-prompt-guard-2-86m", context_length=512),
     ModelInfo(id="whisper-large-v3", owner="OpenAI", context_length=448),
+    ModelInfo(id="allam-2-7b", owner="SDAIA", context_length=4096),  # too small for the Critic
 ]
 
 
