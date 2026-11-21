@@ -16,8 +16,8 @@ build/
 
 # Local caches / outputs
 .cache/
-eval/results/*.json
-!eval/results/.gitkeep
+evaluation/results/*.json
+!evaluation/results/.gitkeep
 
 # Editors / OS
 .vscode/

@@ -1,0 +1,22 @@
+# 20k read-heavy RPS hitting the database directly, no cache.
+design:
+  name: Product catalogue
+  description: Product pages; about 95 % of requests are reads of the same popular items.
+  components:
+    - {id: users, name: Shoppers, type: client}
+    - {id: alb, name: Load balancer, type: load_balancer, aws_service: ALB,
+       availability_zones: 2, public: true, encryption_in_transit: true}
+    - {id: catalog-api, name: Catalogue API, type: container_service, aws_service: ECS Fargate,
+       replicas: 6, availability_zones: 2, autoscaling: {min_replicas: 6, max_replicas: 30}}
+    - {id: catalog-db, name: Catalogue DB, type: relational_database,
+       aws_service: RDS PostgreSQL, instance_type: db.m5.xlarge, availability_zones: 2,
+       encryption_at_rest: true, backups_enabled: true}
+  edges:
+    - {from: users, to: alb, protocol: https}
+    - {from: alb, to: catalog-api, protocol: http}
+    - {from: catalog-api, to: catalog-db, protocol: sql}
+requirements:
+  availability_slo_percent: 99.9
+  peak_rps: 20000
+  p95_latency_ms: 100
+  monthly_budget_usd: 8000

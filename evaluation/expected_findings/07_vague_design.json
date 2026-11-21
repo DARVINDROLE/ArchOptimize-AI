@@ -1,0 +1,13 @@
+{
+  "case_id": "07_vague_design",
+  "summary": "Too little information; the review must list assumptions and missing facts.",
+  "acceptable_verdicts": [
+    "approve_with_changes",
+    "reject"
+  ],
+  "planted_flaws": [],
+  "secondary_issues": [],
+  "behaviours": [
+    "assumptions_listed"
+  ]
+}

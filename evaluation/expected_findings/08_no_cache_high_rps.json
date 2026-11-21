@@ -1,0 +1,47 @@
+{
+  "case_id": "08_no_cache_high_rps",
+  "summary": "20k mostly-repeated reads per second go straight to the database.",
+  "acceptable_verdicts": [
+    "approve_with_changes",
+    "reject"
+  ],
+  "planted_flaws": [
+    {
+      "id": "no-cache",
+      "description": "No cache in front of a read-heavy DB at 20k RPS.",
+      "pillars": [
+        "performance_efficiency",
+        "reliability",
+        "cost_optimization"
+      ],
+      "component_ids": [
+        "catalog-db",
+        "catalog-api"
+      ]
+    }
+  ],
+  "secondary_issues": [
+    {
+      "id": "no-waf",
+      "description": "Public entry point without a WAF / rate limiting.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "alb"
+      ]
+    },
+    {
+      "id": "plain-http-internal",
+      "description": "Load balancer to service over plain HTTP.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "alb",
+        "catalog-api"
+      ]
+    }
+  ],
+  "behaviours": []
+}

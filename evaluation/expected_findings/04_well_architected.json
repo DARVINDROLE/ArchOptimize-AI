@@ -1,0 +1,11 @@
+{
+  "case_id": "04_well_architected",
+  "summary": "Well-built design; should be approved with no serious findings.",
+  "acceptable_verdicts": [
+    "approve",
+    "approve_with_changes"
+  ],
+  "planted_flaws": [],
+  "secondary_issues": [],
+  "behaviours": []
+}

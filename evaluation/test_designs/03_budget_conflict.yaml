@@ -1,0 +1,22 @@
+# 10k RPS on a $500/month budget with a large EKS + Aurora footprint.
+design:
+  name: Social feed
+  description: Read-heavy feed service.
+  components:
+    - {id: users, name: App users, type: client}
+    - {id: alb, name: Load balancer, type: load_balancer, aws_service: ALB,
+       availability_zones: 3, public: true, encryption_in_transit: true}
+    - {id: feed-svc, name: Feed service, type: container_service, aws_service: EKS,
+       instance_type: m5.2xlarge, replicas: 12, availability_zones: 3,
+       autoscaling: {min_replicas: 12, max_replicas: 40}}
+    - {id: feed-db, name: Feed DB, type: relational_database, aws_service: Aurora PostgreSQL,
+       instance_type: db.r6g.4xlarge, replicas: 3, availability_zones: 3,
+       encryption_at_rest: true, backups_enabled: true}
+  edges:
+    - {from: users, to: alb, protocol: https}
+    - {from: alb, to: feed-svc, protocol: http}
+    - {from: feed-svc, to: feed-db, protocol: sql}
+requirements:
+  availability_slo_percent: 99.9
+  peak_rps: 10000
+  monthly_budget_usd: 500

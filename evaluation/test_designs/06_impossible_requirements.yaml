@@ -1,0 +1,20 @@
+# Five nines on a hundred dollars a month: the requirements conflict with each other.
+design:
+  name: Trading gateway
+  description: Order entry gateway for a broker.
+  components:
+    - {id: traders, name: Traders, type: client}
+    - {id: gateway, name: Gateway, type: compute_vm, aws_service: EC2, instance_type: t3.small,
+       replicas: 1, availability_zones: 1, public: true, encryption_in_transit: true}
+    - {id: orders-db, name: Orders DB, type: relational_database, aws_service: RDS MySQL,
+       instance_type: db.t3.micro, availability_zones: 1, encryption_at_rest: true,
+       backups_enabled: true}
+  edges:
+    - {from: traders, to: gateway, protocol: https}
+    - {from: gateway, to: orders-db, protocol: sql}
+requirements:
+  availability_slo_percent: 99.999
+  peak_rps: 3000
+  p95_latency_ms: 20
+  monthly_budget_usd: 100
+  rto_minutes: 1

@@ -1,0 +1,19 @@
+# The database is reachable from the internet.
+design:
+  name: Analytics dashboard
+  description: Internal dashboard; the DB was made public so analysts can connect from home.
+  components:
+    - {id: analysts, name: Analysts, type: client}
+    - {id: dashboard, name: Dashboard, type: container_service, aws_service: ECS Fargate,
+       replicas: 2, availability_zones: 2, public: true, encryption_in_transit: true}
+    - {id: metrics-db, name: Metrics DB, type: relational_database, aws_service: RDS PostgreSQL,
+       instance_type: db.m5.large, availability_zones: 2, public: true,
+       encryption_at_rest: true, backups_enabled: true, data_classification: internal}
+  edges:
+    - {from: analysts, to: dashboard, protocol: https}
+    - {from: analysts, to: metrics-db, protocol: sql}
+    - {from: dashboard, to: metrics-db, protocol: sql}
+requirements:
+  availability_slo_percent: 99.5
+  peak_rps: 20
+  monthly_budget_usd: 700

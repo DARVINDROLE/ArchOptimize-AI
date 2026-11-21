@@ -12,6 +12,7 @@ from archoptimize.schemas.component_graph import (
 from archoptimize.schemas.design_submission import DesignSubmission
 from archoptimize.schemas.finding import Finding, Pillar, Severity
 from archoptimize.schemas.requirements import ComplianceStandard, Requirements
+from archoptimize.schemas.review_result import ReviewResult, Verdict
 
 __all__ = [
     "AutoscalingConfig",
@@ -26,5 +27,7 @@ __all__ = [
     "Finding",
     "Pillar",
     "Requirements",
+    "ReviewResult",
     "Severity",
+    "Verdict",
 ]

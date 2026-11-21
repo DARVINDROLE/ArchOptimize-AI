@@ -1,0 +1,44 @@
+{
+  "case_id": "01_single_az_monolith",
+  "summary": "Single EC2 instance and single-AZ RDS cannot meet a 99.9 % SLO.",
+  "acceptable_verdicts": [
+    "approve_with_changes",
+    "reject"
+  ],
+  "planted_flaws": [
+    {
+      "id": "single-az-database",
+      "description": "Orders DB runs in one AZ (no Multi-AZ failover).",
+      "pillars": [
+        "reliability"
+      ],
+      "component_ids": [
+        "orders-db"
+      ]
+    },
+    {
+      "id": "single-app-instance",
+      "description": "One app server in one AZ is a single point of failure.",
+      "pillars": [
+        "reliability",
+        "performance_efficiency"
+      ],
+      "component_ids": [
+        "web"
+      ]
+    }
+  ],
+  "secondary_issues": [
+    {
+      "id": "no-waf",
+      "description": "Public entry point without a WAF / rate limiting.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "web"
+      ]
+    }
+  ],
+  "behaviours": []
+}

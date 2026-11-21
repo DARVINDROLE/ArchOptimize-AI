@@ -1,0 +1,20 @@
+# Backups switched off while the RPO is 15 minutes.
+design:
+  name: Patient appointments
+  description: Clinic booking system.
+  components:
+    - {id: staff, name: Clinic staff, type: client}
+    - {id: app, name: Booking app, type: container_service, aws_service: ECS Fargate,
+       replicas: 2, availability_zones: 2, public: true, encryption_in_transit: true}
+    - {id: bookings-db, name: Bookings DB, type: relational_database,
+       aws_service: RDS PostgreSQL, instance_type: db.m5.large, availability_zones: 2,
+       encryption_at_rest: true, backups_enabled: false, data_classification: confidential}
+  edges:
+    - {from: staff, to: app, protocol: https}
+    - {from: app, to: bookings-db, protocol: sql}
+requirements:
+  availability_slo_percent: 99.9
+  peak_rps: 100
+  monthly_budget_usd: 800
+  rpo_minutes: 15
+  rto_minutes: 120

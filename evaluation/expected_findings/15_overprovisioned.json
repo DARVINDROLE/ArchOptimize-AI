@@ -1,0 +1,35 @@
+{
+  "case_id": "15_overprovisioned",
+  "summary": "Huge instances for 10 RPS blow the $200/month budget.",
+  "acceptable_verdicts": [
+    "approve_with_changes",
+    "reject"
+  ],
+  "planted_flaws": [
+    {
+      "id": "overprovisioned",
+      "description": "4x m5.8xlarge + db.r5.8xlarge for 10 RPS; far over budget.",
+      "pillars": [
+        "cost_optimization"
+      ],
+      "component_ids": [
+        "blog",
+        "blog-db"
+      ]
+    }
+  ],
+  "secondary_issues": [
+    {
+      "id": "no-waf",
+      "description": "Public entry point without a WAF / rate limiting.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "cdn",
+        "blog"
+      ]
+    }
+  ],
+  "behaviours": []
+}

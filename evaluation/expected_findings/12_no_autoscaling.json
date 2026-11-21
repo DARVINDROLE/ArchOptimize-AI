@@ -1,0 +1,56 @@
+{
+  "case_id": "12_no_autoscaling",
+  "summary": "Fixed capacity of 2 instances for a 20x traffic spike to 5k RPS.",
+  "acceptable_verdicts": [
+    "approve_with_changes",
+    "reject"
+  ],
+  "planted_flaws": [
+    {
+      "id": "no-autoscaling",
+      "description": "Fixed 2 instances cannot absorb spikes to 5,000 RPS.",
+      "pillars": [
+        "performance_efficiency",
+        "reliability"
+      ],
+      "component_ids": [
+        "sales-api"
+      ]
+    }
+  ],
+  "secondary_issues": [
+    {
+      "id": "no-waf",
+      "description": "Public entry point without a WAF / rate limiting.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "alb"
+      ]
+    },
+    {
+      "id": "plain-http-internal",
+      "description": "Load balancer to service over plain HTTP.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "alb",
+        "sales-api"
+      ]
+    },
+    {
+      "id": "db-write-hotspot",
+      "description": "Sales spike concentrates writes on one DB.",
+      "pillars": [
+        "performance_efficiency",
+        "reliability"
+      ],
+      "component_ids": [
+        "sales-db"
+      ]
+    }
+  ],
+  "behaviours": []
+}

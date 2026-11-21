@@ -1,0 +1,59 @@
+{
+  "case_id": "03_budget_conflict",
+  "summary": "The EKS + Aurora footprint costs far more than the $500/month budget.",
+  "acceptable_verdicts": [
+    "approve_with_changes",
+    "reject"
+  ],
+  "planted_flaws": [
+    {
+      "id": "over-budget",
+      "description": "12-40 m5.2xlarge nodes + 3 db.r6g.4xlarge exceed $500/month.",
+      "pillars": [
+        "cost_optimization"
+      ],
+      "component_ids": [
+        "feed-svc",
+        "feed-db"
+      ]
+    }
+  ],
+  "secondary_issues": [
+    {
+      "id": "no-cache",
+      "description": "Read-heavy feed at 10k RPS without a cache.",
+      "pillars": [
+        "performance_efficiency",
+        "cost_optimization"
+      ],
+      "component_ids": [
+        "feed-db",
+        "feed-svc"
+      ]
+    },
+    {
+      "id": "no-waf",
+      "description": "Public entry point without a WAF / rate limiting.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "alb"
+      ]
+    },
+    {
+      "id": "plain-http-internal",
+      "description": "Load balancer to service over plain HTTP.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "alb",
+        "feed-svc"
+      ]
+    }
+  ],
+  "behaviours": [
+    "requirement_conflict_stated"
+  ]
+}

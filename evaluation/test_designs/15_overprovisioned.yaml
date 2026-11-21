@@ -1,0 +1,21 @@
+# Huge instances for a tiny workload on a small budget.
+design:
+  name: Team blog
+  description: Company blog with a few hundred visits a day.
+  components:
+    - {id: readers, name: Readers, type: client}
+    - {id: cdn, name: CDN, type: cdn, aws_service: CloudFront, public: true,
+       encryption_in_transit: true}
+    - {id: blog, name: Blog server, type: compute_vm, aws_service: EC2,
+       instance_type: m5.8xlarge, replicas: 4, availability_zones: 2}
+    - {id: blog-db, name: Blog DB, type: relational_database, aws_service: RDS MySQL,
+       instance_type: db.r5.8xlarge, availability_zones: 2, encryption_at_rest: true,
+       backups_enabled: true}
+  edges:
+    - {from: readers, to: cdn, protocol: https}
+    - {from: cdn, to: blog, protocol: https}
+    - {from: blog, to: blog-db, protocol: sql}
+requirements:
+  availability_slo_percent: 99.5
+  peak_rps: 10
+  monthly_budget_usd: 200

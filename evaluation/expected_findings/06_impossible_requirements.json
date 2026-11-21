@@ -1,0 +1,45 @@
+{
+  "case_id": "06_impossible_requirements",
+  "summary": "99.999 %, 3k RPS, 20 ms p95 and 1-minute RTO are impossible for $100/month.",
+  "acceptable_verdicts": [
+    "reject"
+  ],
+  "planted_flaws": [
+    {
+      "id": "single-points-of-failure",
+      "description": "Single gateway and single-AZ DB.",
+      "pillars": [
+        "reliability"
+      ],
+      "component_ids": [
+        "gateway",
+        "orders-db"
+      ]
+    },
+    {
+      "id": "undersized-for-load",
+      "description": "One t3.small cannot serve 3,000 RPS.",
+      "pillars": [
+        "performance_efficiency"
+      ],
+      "component_ids": [
+        "gateway"
+      ]
+    }
+  ],
+  "secondary_issues": [
+    {
+      "id": "no-waf",
+      "description": "Public entry point without a WAF / rate limiting.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "gateway"
+      ]
+    }
+  ],
+  "behaviours": [
+    "requirement_conflict_stated"
+  ]
+}

@@ -147,7 +147,7 @@ Each step: **Goal · Tasks · Done when**. Don't start a step until the previous
 
 ---
 
-## 5. Test cases (in `evaluation/test_designs/`)
+## 5. Test cases (in `evaluation/test_designs/`, answer keys in `evaluation/expected_findings/`)
 
 | # | Design | Expected |
 |---|---|---|
@@ -198,7 +198,7 @@ Update this after every step (tick the box, add date + one-line note). AI assist
 
 - [ ] Step 0 — Setup & provider layer — code + unit tests done; live smoke check blocked by Smart App Control
 - [x] Step 1 — Data contracts + YAML input + diagram — 2026-11-22: schemas (ComponentGraph, Requirements, Finding, DesignSubmission), safe YAML parser (size cap, no aliases, located errors), Mermaid renderer, `python -m archoptimize.cli preview`; 65 unit tests. `CandidateDesign`/`ReviewResult` deferred to Steps 5–6 where they're first used.
-- [ ] Step 2 — Evaluation set
+- [x] Step 2 — Evaluation set — 2026-11-22: 15 planted-flaw designs + answer keys (19 flaws, secondary issues, behaviour checks), scoring (recall, false alarms, verdict accuracy, behaviours, latency, tokens), `python -m evaluation.run_evaluation`; rubber-stamp floor recorded.
 - [ ] Step 3 — Single-LLM baseline
 - [ ] Step 4 — RAG
 - [ ] Step 5 — Multi-agent core
@@ -210,12 +210,13 @@ Update this after every step (tick the box, add date + one-line note). AI assist
 - [ ] Step 11 — Deploy
 - [ ] Step 12 — Harden & showcase
 
-**Current step:** Step 2 (eval set). Open from Step 0: turn Smart App Control off → `uv run python -m pytest` (router tests) → `uv run python -m archoptimize.llm.smoke_check`. **Prereqs status:** Python 3.12.10, Git 2.56, VS Code, uv 0.13.9; repo github.com/DARVINDROLE/ArchOptimize-AI; keys in `.env`.
+**Current step:** Step 3 (single-LLM baseline) — needs LangChain, so blocked until Smart App Control is off. Open from Step 0: turn Smart App Control off → `uv run python -m pytest` (router tests) → `uv run python -m archoptimize.llm.smoke_check`. **Prereqs status:** Python 3.12.10, Git 2.56, VS Code, uv 0.13.9; repo github.com/DARVINDROLE/ArchOptimize-AI; keys in `.env`.
 
 Eval results log (fill from Step 3 on):
 
 | Date | Step | Flaw recall | False findings | Verdict acc. | Avg latency | Tokens/review |
 |---|---|---|---|---|---|---|
+| 2026-11-22 | 2 (rubber_stamp floor: approve all, find nothing) | 0% (0/19) | 0 | 7% (1/15) | 0 s | — |
 
 ---
 

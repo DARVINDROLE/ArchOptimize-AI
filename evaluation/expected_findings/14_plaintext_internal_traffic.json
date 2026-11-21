@@ -1,0 +1,36 @@
+{
+  "case_id": "14_plaintext_internal_traffic",
+  "summary": "Confidential HR data travels unencrypted between services.",
+  "acceptable_verdicts": [
+    "approve_with_changes",
+    "reject"
+  ],
+  "planted_flaws": [
+    {
+      "id": "no-encryption-in-transit",
+      "description": "Portal->API (http) and API->DB without TLS.",
+      "pillars": [
+        "security",
+        "compliance"
+      ],
+      "component_ids": [
+        "records-api",
+        "records-db",
+        "portal"
+      ]
+    }
+  ],
+  "secondary_issues": [
+    {
+      "id": "no-waf",
+      "description": "Public entry point without a WAF / rate limiting.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "portal"
+      ]
+    }
+  ],
+  "behaviours": []
+}

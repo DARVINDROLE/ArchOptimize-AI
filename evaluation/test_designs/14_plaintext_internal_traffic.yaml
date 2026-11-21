@@ -1,0 +1,22 @@
+# Confidential data travels unencrypted between internal services.
+design:
+  name: HR records
+  description: Employee records service.
+  components:
+    - {id: employees, name: Employees, type: client}
+    - {id: portal, name: HR portal, type: container_service, aws_service: ECS Fargate,
+       replicas: 2, availability_zones: 2, public: true, encryption_in_transit: true}
+    - {id: records-api, name: Records API, type: container_service, aws_service: ECS Fargate,
+       replicas: 2, availability_zones: 2, encryption_in_transit: false}
+    - {id: records-db, name: Records DB, type: relational_database, aws_service: RDS MySQL,
+       instance_type: db.m5.large, availability_zones: 2, encryption_at_rest: true,
+       encryption_in_transit: false, backups_enabled: true, data_classification: confidential}
+  edges:
+    - {from: employees, to: portal, protocol: https}
+    - {from: portal, to: records-api, protocol: http}
+    - {from: records-api, to: records-db, protocol: sql}
+requirements:
+  availability_slo_percent: 99.9
+  peak_rps: 50
+  monthly_budget_usd: 900
+  compliance: [gdpr]

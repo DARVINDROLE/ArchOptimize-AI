@@ -1,0 +1,76 @@
+{
+  "case_id": "09_sync_call_chain",
+  "summary": "Five synchronous hops (one at 99.5 %) cannot reach 99.95 % or the latency target.",
+  "acceptable_verdicts": [
+    "approve_with_changes",
+    "reject"
+  ],
+  "planted_flaws": [
+    {
+      "id": "sync-chain-availability",
+      "description": "Chained sync calls multiply below the 99.95 % SLO.",
+      "pillars": [
+        "reliability"
+      ],
+      "component_ids": [
+        "cart",
+        "pricing",
+        "inventory",
+        "fraud",
+        "email"
+      ]
+    },
+    {
+      "id": "sync-email",
+      "description": "Confirmation email should be async (queue), not in the request path.",
+      "pillars": [
+        "reliability",
+        "performance_efficiency"
+      ],
+      "component_ids": [
+        "email",
+        "fraud"
+      ]
+    }
+  ],
+  "secondary_issues": [
+    {
+      "id": "chain-latency",
+      "description": "Latencies add up across five hops.",
+      "pillars": [
+        "performance_efficiency"
+      ],
+      "component_ids": [
+        "cart",
+        "pricing",
+        "inventory",
+        "fraud",
+        "email"
+      ]
+    },
+    {
+      "id": "plain-http-internal",
+      "description": "Internal calls over plain HTTP.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "pricing",
+        "inventory",
+        "email",
+        "cart"
+      ]
+    },
+    {
+      "id": "no-waf",
+      "description": "Public entry point without a WAF / rate limiting.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "cart"
+      ]
+    }
+  ],
+  "behaviours": []
+}

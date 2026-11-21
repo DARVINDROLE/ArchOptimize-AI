@@ -1,0 +1,67 @@
+{
+  "case_id": "02_pci_public_bucket",
+  "summary": "Cardholder data in a public, unencrypted bucket and an unencrypted table (PCI).",
+  "acceptable_verdicts": [
+    "reject"
+  ],
+  "planted_flaws": [
+    {
+      "id": "public-bucket-cardholder-data",
+      "description": "Receipts bucket is public and holds card numbers.",
+      "pillars": [
+        "security",
+        "compliance"
+      ],
+      "component_ids": [
+        "receipts-bucket"
+      ]
+    },
+    {
+      "id": "unencrypted-cardholder-bucket",
+      "description": "Receipts bucket is not encrypted at rest.",
+      "pillars": [
+        "security",
+        "compliance"
+      ],
+      "component_ids": [
+        "receipts-bucket"
+      ]
+    },
+    {
+      "id": "unencrypted-payments-table",
+      "description": "Payments table with card data is not encrypted.",
+      "pillars": [
+        "security",
+        "compliance"
+      ],
+      "component_ids": [
+        "payments-db"
+      ]
+    },
+    {
+      "id": "pan-storage",
+      "description": "Full card numbers (PAN) are stored; PCI requires avoiding that.",
+      "pillars": [
+        "compliance",
+        "security"
+      ],
+      "component_ids": [
+        "receipts-bucket",
+        "payments-db"
+      ]
+    }
+  ],
+  "secondary_issues": [
+    {
+      "id": "no-waf",
+      "description": "Public entry point without a WAF / rate limiting.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "payments-api"
+      ]
+    }
+  ],
+  "behaviours": []
+}

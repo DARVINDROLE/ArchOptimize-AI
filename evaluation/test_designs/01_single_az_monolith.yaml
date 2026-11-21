@@ -1,0 +1,20 @@
+# Classic monolith: one server, one single-AZ database, but a 99.9 % SLO.
+design:
+  name: Bookstore monolith
+  description: Web shop serving catalogue pages and orders from one EC2 instance.
+  components:
+    - {id: users, name: Customers, type: client}
+    - {id: web, name: App server, type: compute_vm, aws_service: EC2, instance_type: m5.large,
+       replicas: 1, availability_zones: 1, public: true, encryption_in_transit: true}
+    - {id: orders-db, name: Orders DB, type: relational_database, aws_service: RDS MySQL,
+       instance_type: db.m5.large, availability_zones: 1, encryption_at_rest: true,
+       backups_enabled: true, data_classification: confidential}
+  edges:
+    - {from: users, to: web, protocol: https}
+    - {from: web, to: orders-db, protocol: sql}
+requirements:
+  availability_slo_percent: 99.9
+  peak_rps: 500
+  monthly_budget_usd: 600
+  rpo_minutes: 15
+  rto_minutes: 60

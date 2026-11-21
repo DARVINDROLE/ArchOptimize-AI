@@ -1,0 +1,33 @@
+{
+  "case_id": "10_no_backups",
+  "summary": "Backups are disabled although the RPO is 15 minutes.",
+  "acceptable_verdicts": [
+    "approve_with_changes",
+    "reject"
+  ],
+  "planted_flaws": [
+    {
+      "id": "backups-disabled",
+      "description": "No backups / point-in-time recovery: RPO 15 min not met.",
+      "pillars": [
+        "reliability"
+      ],
+      "component_ids": [
+        "bookings-db"
+      ]
+    }
+  ],
+  "secondary_issues": [
+    {
+      "id": "no-waf",
+      "description": "Public entry point without a WAF / rate limiting.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "app"
+      ]
+    }
+  ],
+  "behaviours": []
+}

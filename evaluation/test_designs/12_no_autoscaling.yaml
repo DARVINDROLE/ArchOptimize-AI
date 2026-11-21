@@ -1,0 +1,21 @@
+# Fixed capacity for a spiky workload: 2 instances, peaks of 5k RPS.
+design:
+  name: Ticket drop
+  description: Concert ticket sales; traffic spikes 20x when sales open.
+  components:
+    - {id: fans, name: Fans, type: client}
+    - {id: alb, name: Load balancer, type: load_balancer, aws_service: ALB,
+       availability_zones: 2, public: true, encryption_in_transit: true}
+    - {id: sales-api, name: Sales API, type: compute_vm, aws_service: EC2,
+       instance_type: c5.large, replicas: 2, availability_zones: 2}
+    - {id: sales-db, name: Sales DB, type: relational_database, aws_service: Aurora MySQL,
+       instance_type: db.r6g.large, replicas: 2, availability_zones: 2,
+       encryption_at_rest: true, backups_enabled: true}
+  edges:
+    - {from: fans, to: alb, protocol: https}
+    - {from: alb, to: sales-api, protocol: http}
+    - {from: sales-api, to: sales-db, protocol: sql}
+requirements:
+  availability_slo_percent: 99.9
+  peak_rps: 5000
+  monthly_budget_usd: 4000

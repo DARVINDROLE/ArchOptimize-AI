@@ -1,0 +1,35 @@
+{
+  "case_id": "11_no_waf_public_api",
+  "summary": "A public login API has no WAF or rate limiting.",
+  "acceptable_verdicts": [
+    "approve_with_changes",
+    "reject"
+  ],
+  "planted_flaws": [
+    {
+      "id": "no-waf",
+      "description": "Public entry point without a WAF / rate limiting.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "alb",
+        "auth-api"
+      ]
+    }
+  ],
+  "secondary_issues": [
+    {
+      "id": "plain-http-internal",
+      "description": "Load balancer to service over plain HTTP.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "alb",
+        "auth-api"
+      ]
+    }
+  ],
+  "behaviours": []
+}

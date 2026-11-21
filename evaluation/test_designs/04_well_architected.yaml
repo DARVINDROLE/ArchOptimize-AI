@@ -1,0 +1,38 @@
+# A solid design: should be approved with few or no findings.
+design:
+  name: Ticketing platform
+  description: Multi-AZ, autoscaled, cached, protected and backed up.
+  components:
+    - {id: users, name: Users, type: client}
+    - {id: cdn, name: CDN, type: cdn, aws_service: CloudFront, public: true,
+       encryption_in_transit: true}
+    - {id: waf, name: Web firewall, type: waf, aws_service: AWS WAF}
+    - {id: alb, name: Load balancer, type: load_balancer, aws_service: ALB,
+       availability_zones: 3, encryption_in_transit: true}
+    - {id: api, name: Ticket API, type: container_service, aws_service: ECS Fargate,
+       replicas: 3, availability_zones: 3, autoscaling: {min_replicas: 3, max_replicas: 12},
+       encryption_in_transit: true}
+    - {id: cache, name: Session cache, type: cache, aws_service: ElastiCache Redis,
+       instance_type: cache.r6g.large, replicas: 2, availability_zones: 2,
+       encryption_at_rest: true, encryption_in_transit: true}
+    - {id: tickets-db, name: Tickets DB, type: relational_database,
+       aws_service: Aurora PostgreSQL, instance_type: db.r6g.large, replicas: 2,
+       availability_zones: 3, encryption_at_rest: true, encryption_in_transit: true,
+       backups_enabled: true, data_classification: confidential}
+    - {id: email-queue, name: Email queue, type: queue, aws_service: SQS,
+       availability_zones: 3, encryption_at_rest: true}
+  edges:
+    - {from: users, to: cdn, protocol: https}
+    - {from: cdn, to: waf, protocol: https}
+    - {from: waf, to: alb, protocol: https}
+    - {from: alb, to: api, protocol: https}
+    - {from: api, to: cache, protocol: tls}
+    - {from: api, to: tickets-db, protocol: sql-tls}
+    - {from: api, to: email-queue, mode: async, protocol: https}
+requirements:
+  availability_slo_percent: 99.9
+  peak_rps: 2000
+  p95_latency_ms: 300
+  monthly_budget_usd: 6000
+  rpo_minutes: 5
+  rto_minutes: 30

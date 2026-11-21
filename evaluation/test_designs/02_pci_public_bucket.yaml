@@ -1,0 +1,26 @@
+# Card payments with a public bucket holding card data and no encryption, under PCI DSS.
+design:
+  name: Payments API
+  description: Serverless API that charges cards and stores receipts.
+  components:
+    - {id: shoppers, name: Shoppers, type: client}
+    - {id: payments-api, name: Payments API, type: api_gateway, aws_service: API Gateway,
+       public: true, encryption_in_transit: true}
+    - {id: charge-fn, name: Charge function, type: serverless_function, aws_service: Lambda,
+       availability_zones: 3}
+    - {id: payments-db, name: Payments table, type: nosql_database, aws_service: DynamoDB,
+       availability_zones: 3, encryption_at_rest: false, backups_enabled: true,
+       data_classification: cardholder}
+    - {id: receipts-bucket, name: Receipts bucket, type: object_storage, aws_service: S3,
+       public: true, encryption_at_rest: false, data_classification: cardholder,
+       notes: "Full card numbers are written into receipt PDFs."}
+  edges:
+    - {from: shoppers, to: payments-api, protocol: https}
+    - {from: payments-api, to: charge-fn}
+    - {from: charge-fn, to: payments-db}
+    - {from: charge-fn, to: receipts-bucket}
+requirements:
+  availability_slo_percent: 99.9
+  peak_rps: 200
+  monthly_budget_usd: 1500
+  compliance: [pci_dss]

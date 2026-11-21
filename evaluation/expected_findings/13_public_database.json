@@ -1,0 +1,33 @@
+{
+  "case_id": "13_public_database",
+  "summary": "The database is reachable from the internet.",
+  "acceptable_verdicts": [
+    "approve_with_changes",
+    "reject"
+  ],
+  "planted_flaws": [
+    {
+      "id": "public-database",
+      "description": "Metrics DB is publicly accessible.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "metrics-db"
+      ]
+    }
+  ],
+  "secondary_issues": [
+    {
+      "id": "no-waf",
+      "description": "Public entry point without a WAF / rate limiting.",
+      "pillars": [
+        "security"
+      ],
+      "component_ids": [
+        "dashboard"
+      ]
+    }
+  ],
+  "behaviours": []
+}

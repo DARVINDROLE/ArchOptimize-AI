@@ -1,0 +1,9 @@
+# Almost no information: the review must list its assumptions instead of inventing facts.
+design:
+  name: Our new app
+  description: >-
+    We are building an app for our customers. It has a backend on AWS and stores
+    some data. It should be fast and reliable and not too expensive.
+  components:
+    - {id: backend, name: Backend, type: other}
+requirements: {}

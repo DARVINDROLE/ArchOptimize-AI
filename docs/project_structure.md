@@ -63,7 +63,7 @@ ArchOptimize-AI/
 │  │  ├─ design_submission.py               ✅      DesignSubmission = design + requirements (output of every parser)
 │  │  ├─ finding.py                         ✅      Pillar, Severity, Citation, Finding
 │  │  ├─ candidate_design.py                ◻ [6]  DesignChange, CandidateDesign, CriticScore
-│  │  └─ review_result.py                   ◻ [5]  PillarScore, Verdict, ReviewResult
+│  │  └─ review_result.py                   ✅      Verdict, ReviewResult (pillar scores added in Step 5)
 │  │
 │  ├─ llm/                                  LLM ACCESS: the only place that talks to LLM APIs
 │  │  ├─ role_config.py                     ✅      loads llm_roles.yaml
@@ -147,12 +147,14 @@ ArchOptimize-AI/
 │  ├─ knowledge_index/                      ◻ [4]  prebuilt Chroma index (shipped; Git LFS if > 10 MB)
 │  └─ demo_reviews/                         ◻ [9]  precomputed review JSONs for demo mode
 │
-├─ evaluation/                              ◻ [2]  QUALITY MEASUREMENT (not shipped to users)
-│  ├─ test_designs/*.yaml                   ◻      designs with planted flaws
-│  ├─ expected_findings/*.json              ◻      expected flaws (pillar + component id) + verdict
-│  ├─ scoring.py                            ◻      recall, false findings, verdict accuracy
-│  ├─ run_evaluation.py                     ◻      python -m evaluation.run_evaluation
-│  └─ results/                              ◻      dated JSON results (gitignored)
+├─ evaluation/                              ✅      QUALITY MEASUREMENT (not shipped to users)
+│  ├─ test_designs/*.yaml                   ✅      15 designs with planted flaws
+│  ├─ expected_findings/*.json              ✅      answer keys: planted flaws, secondary issues, verdicts, behaviours
+│  ├─ eval_cases.py                         ✅      load + cross-check cases and answer keys
+│  ├─ reference_reviewers.py                ✅      rubber_stamp floor (approve all, find nothing)
+│  ├─ scoring.py                            ✅      recall, false findings, verdict accuracy
+│  ├─ run_evaluation.py                     ✅      python -m evaluation.run_evaluation
+│  └─ results/                              ✅      dated JSON results (gitignored)
 │
 ├─ tests/                                   mirrors archoptimize/
 │  ├─ conftest.py                           ✅      shared fixtures (fake clock, model catalog)

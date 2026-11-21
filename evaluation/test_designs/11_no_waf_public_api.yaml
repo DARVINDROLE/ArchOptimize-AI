@@ -1,0 +1,21 @@
+# A public login API with no WAF or rate limiting in front of it.
+design:
+  name: Login service
+  description: Public authentication API for a consumer app.
+  components:
+    - {id: users, name: App users, type: client}
+    - {id: alb, name: Load balancer, type: load_balancer, aws_service: ALB,
+       availability_zones: 3, public: true, encryption_in_transit: true}
+    - {id: auth-api, name: Auth API, type: container_service, aws_service: ECS Fargate,
+       replicas: 3, availability_zones: 3, autoscaling: {min_replicas: 3, max_replicas: 9}}
+    - {id: users-db, name: Users DB, type: nosql_database, aws_service: DynamoDB,
+       availability_zones: 3, encryption_at_rest: true, backups_enabled: true,
+       data_classification: confidential}
+  edges:
+    - {from: users, to: alb, protocol: https}
+    - {from: alb, to: auth-api, protocol: http}
+    - {from: auth-api, to: users-db, protocol: https}
+requirements:
+  availability_slo_percent: 99.9
+  peak_rps: 1500
+  monthly_budget_usd: 2000

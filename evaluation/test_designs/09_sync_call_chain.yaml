@@ -1,0 +1,27 @@
+# Five services called synchronously in a chain: availabilities multiply and latencies add up.
+design:
+  name: Checkout flow
+  description: Each step calls the next and waits for its answer.
+  components:
+    - {id: users, name: Shoppers, type: client}
+    - {id: cart, name: Cart service, type: container_service, aws_service: ECS,
+       replicas: 2, availability_zones: 2, public: true, encryption_in_transit: true}
+    - {id: pricing, name: Pricing service, type: container_service, aws_service: ECS,
+       replicas: 2, availability_zones: 2}
+    - {id: inventory, name: Inventory service, type: container_service, aws_service: ECS,
+       replicas: 2, availability_zones: 2}
+    - {id: fraud, name: Fraud check, type: external_service,
+       notes: "Third-party API with a 99.5 % SLA."}
+    - {id: email, name: Confirmation email, type: container_service, aws_service: ECS,
+       replicas: 2, availability_zones: 2}
+  edges:
+    - {from: users, to: cart, protocol: https}
+    - {from: cart, to: pricing, protocol: http}
+    - {from: pricing, to: inventory, protocol: http}
+    - {from: inventory, to: fraud, protocol: https}
+    - {from: fraud, to: email, protocol: http}
+requirements:
+  availability_slo_percent: 99.95
+  peak_rps: 800
+  p95_latency_ms: 250
+  monthly_budget_usd: 3000
