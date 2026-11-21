@@ -199,7 +199,7 @@ Update this after every step (tick the box, add date + one-line note). AI assist
 - [x] Step 0 — Setup & provider layer — 2026-11-22: `smoke_check` OK (Groq 20b text + 120b structured output; OpenRouter free model chosen at runtime with 429 fallback; vision/critic candidates listed); 94 unit + 2 live tests. Fix: Groq live fallback now honours `min_context`.
 - [x] Step 1 — Data contracts + YAML input + diagram — 2026-11-22: schemas (ComponentGraph, Requirements, Finding, DesignSubmission), safe YAML parser (size cap, no aliases, located errors), Mermaid renderer, `python -m archoptimize.cli preview`; 65 unit tests. `CandidateDesign`/`ReviewResult` deferred to Steps 5–6 where they're first used.
 - [x] Step 2 — Evaluation set — 2026-11-22: 15 planted-flaw designs + answer keys (19 flaws, secondary issues, behaviour checks), scoring (recall, false alarms, verdict accuracy, behaviours, latency, tokens), `python -m evaluation.run_evaluation`; rubber-stamp floor recorded.
-- [ ] Step 3 — Single-LLM baseline
+- [x] Step 3 — Single-LLM baseline — 2026-11-22: `agents/baseline_reviewer.py` (one gpt-oss-120b call → `ReviewDraft`), prompt file, untrusted-input wrapping, token usage + schema-mismatch fallback in the router; full eval run recorded below. Note: results vary run to run (case 09 scored 0/2 then 2/2) → average several runs in Step 10.
 - [ ] Step 4 — RAG
 - [ ] Step 5 — Multi-agent core
 - [ ] Step 6 — Architect + Critic loop
@@ -210,13 +210,14 @@ Update this after every step (tick the box, add date + one-line note). AI assist
 - [ ] Step 11 — Deploy
 - [ ] Step 12 — Harden & showcase
 
-**Current step:** Step 3 (single-LLM baseline). **Prereqs status:** Python 3.12.10, Git 2.56, VS Code, uv 0.13.9; repo github.com/DARVINDROLE/ArchOptimize-AI; keys in `.env`.
+**Current step:** Step 4 (RAG). **Prereqs status:** Python 3.12.10, Git 2.56, VS Code, uv 0.13.9; repo github.com/DARVINDROLE/ArchOptimize-AI; keys in `.env`.
 
 Eval results log (fill from Step 3 on):
 
 | Date | Step | Flaw recall | False findings | Verdict acc. | Avg latency | Tokens/review |
 |---|---|---|---|---|---|---|
 | 2026-11-22 | 2 (rubber_stamp floor: approve all, find nothing) | 0% (0/19) | 0 | 7% (1/15) | 0 s | — |
+| 2026-11-22 | 3 (baseline: 1 call, gpt-oss-120b, no RAG) — behaviours 100% | 84% (16/19) | 23 (HIGH/CRIT unexplained) | 100% (15/15) | 26.8 s (rate-limit retries) | 4,676 |
 
 ---
 

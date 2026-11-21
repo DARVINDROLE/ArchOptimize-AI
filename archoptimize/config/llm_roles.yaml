@@ -23,6 +23,7 @@ roles:
   reviewer:   {provider: groq, models: [openai/gpt-oss-20b]}
   architect:  {provider: groq, models: [openai/gpt-oss-120b, openai/gpt-oss-20b]}
   chair:      {provider: groq, models: [openai/gpt-oss-120b, openai/gpt-oss-20b]}
+  baseline_reviewer: {provider: groq, models: [openai/gpt-oss-120b, openai/gpt-oss-20b]}  # Step 3 yardstick
 
   guard:      # a classifier, not a chat model: no structured output, no fallback
     provider: groq

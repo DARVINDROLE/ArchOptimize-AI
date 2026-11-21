@@ -26,8 +26,16 @@ from evaluation.scoring import CaseScore, EvalSummary, score_case, summarize
 
 Reviewer = Callable[[DesignSubmission], ReviewResult]
 
-# Reviewers grow with the project: Step 3 adds "baseline", Step 5 "board", ...
-REVIEWERS: dict[str, Reviewer] = {"rubber_stamp": rubber_stamp}
+
+def _baseline(submission: DesignSubmission) -> ReviewResult:
+    # imported lazily so the eval can run (rubber_stamp) without LLM libraries loaded
+    from archoptimize.agents.baseline_reviewer import review_baseline
+
+    return review_baseline(submission)
+
+
+# Reviewers grow with the project: Step 5 adds "board", ...
+REVIEWERS: dict[str, Reviewer] = {"rubber_stamp": rubber_stamp, "baseline": _baseline}
 
 RESULTS_DIR = EVALUATION_DIR / "results"
 

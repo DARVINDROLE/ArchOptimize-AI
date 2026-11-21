@@ -56,13 +56,19 @@ class FakeChat:
     async def ainvoke(self, _input, **_kwargs):
         return self._respond()
 
-    def with_structured_output(self, schema, method):
+    def with_structured_output(self, schema, method, include_raw=False):
         chat = self
+
+        class _Raw:
+            usage_metadata = {"total_tokens": 42}
 
         class _Structured:
             def invoke(self, _input, **_kwargs):
                 chat._respond()
-                return schema(text=method)  # echo the method so tests can check it
+                if chat.behaviour == "bad-json":
+                    return {"raw": _Raw(), "parsed": None, "parsing_error": ValueError("bad")}
+                parsed = schema(text=method)  # echo the method so tests can check it
+                return {"raw": _Raw(), "parsed": parsed, "parsing_error": None}
 
         return _Structured()
 
@@ -139,9 +145,17 @@ def test_all_failures_raise_a_summary_without_keys(make_router):
     assert "[redacted-key]" in str(err.value)
 
 
-def test_structured_output_uses_the_candidates_method(make_router):
+def test_structured_output_uses_the_candidates_method_and_reports_tokens(make_router):
     llm = make_router().get_llm("reviewer", KEYS_GROQ_ONLY).with_structured_output(Reply)
     assert llm.invoke("hi") == Reply(text="json_schema")
+    assert llm.last_tokens == 42
+
+
+def test_output_that_does_not_fit_the_schema_tries_next_model(make_router):
+    router = make_router({"openai/gpt-oss-120b": "bad-json"})
+    llm = router.get_llm("architect", KEYS_GROQ_ONLY).with_structured_output(Reply)
+    assert llm.invoke("hi") == Reply(text="json_schema")
+    assert llm.last_candidate.model == "openai/gpt-oss-20b"
 
 
 def test_async_invoke_falls_back_too(make_router):

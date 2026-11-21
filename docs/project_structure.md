@@ -50,7 +50,7 @@ ArchOptimize-AI/
 │  │  ├─ app_settings.py                    ✅      input size caps, timeouts, reviewer concurrency
 │  │  ├─ errors.py                          ✅      ArchOptimizeError family → friendly UI messages
 │  │  ├─ secret_redaction.py                ✅      redact API keys from any text
-│  │  ├─ untrusted_input.py                 ◻      wrap user designs as data, never as instructions
+│  │  ├─ untrusted_input.py                 ✅      wrap user designs as data, never as instructions
 │  │  └─ logging_setup.py                   ◻      logging with the redaction filter always on
 │  │
 │  ├─ config/                               data files only
@@ -63,7 +63,7 @@ ArchOptimize-AI/
 │  │  ├─ design_submission.py               ✅      DesignSubmission = design + requirements (output of every parser)
 │  │  ├─ finding.py                         ✅      Pillar, Severity, Citation, Finding
 │  │  ├─ candidate_design.py                ◻ [6]  DesignChange, CandidateDesign, CriticScore
-│  │  └─ review_result.py                   ✅      Verdict, ReviewResult (pillar scores added in Step 5)
+│  │  └─ review_result.py                   ✅      Verdict, ReviewDraft (LLM output), ReviewResult (pillar scores added in Step 5)
 │  │
 │  ├─ llm/                                  LLM ACCESS: the only place that talks to LLM APIs
 │  │  ├─ role_config.py                     ✅      loads llm_roles.yaml
@@ -106,10 +106,10 @@ ArchOptimize-AI/
 │  │  └─ citation_validator.py              ◻      drop/flag findings citing chunks that weren't retrieved
 │  │
 │  ├─ agents/                               THE REVIEW BOARD: module + prompt + test per agent
-│  │  ├─ agent_base.py                      ◻ [3]  load prompt → get_llm(role) → structured output
+│  │  ├─ agent_base.py                      ✅      load prompt → get_llm(role) → structured output
 │  │  ├─ input_guard.py                     ◻ [5]  size caps + chunked prompt-injection check
 │  │  ├─ reviewer_selector.py               ◻ [5]  decides which reviewers run
-│  │  ├─ baseline_reviewer.py               ◻ [3]  single-LLM review (kept as the eval baseline)
+│  │  ├─ baseline_reviewer.py               ✅      single-LLM review (kept as the eval baseline)
 │  │  ├─ reviewers/                         ◻ [5]
 │  │  │  ├─ reviewer_base.py                ◻      retrieve → calculate → findings → validate citations
 │  │  │  ├─ security_reviewer.py
@@ -120,7 +120,7 @@ ArchOptimize-AI/
 │  │  ├─ architect_agent.py                 ◻ [6]  3 candidate designs in one call
 │  │  ├─ critic_agent.py                    ◻ [6]  rubric + calculator checks → winner
 │  │  ├─ chair_agent.py                     ◻ [5]  verdict, pillar scores, trade-offs
-│  │  └─ prompts/                           ◻      <agent_name>.md for each agent
+│  │  └─ prompts/                           ✅      <agent_name>.md for each agent (baseline_reviewer.md so far)
 │  │
 │  ├─ review_workflow/                      ◻ [5]  LANGGRAPH ORCHESTRATION
 │  │  ├─ workflow_state.py                  ◻      ReviewState
@@ -151,7 +151,7 @@ ArchOptimize-AI/
 │  ├─ test_designs/*.yaml                   ✅      15 designs with planted flaws
 │  ├─ expected_findings/*.json              ✅      answer keys: planted flaws, secondary issues, verdicts, behaviours
 │  ├─ eval_cases.py                         ✅      load + cross-check cases and answer keys
-│  ├─ reference_reviewers.py                ✅      rubber_stamp floor (approve all, find nothing)
+│  ├─ reference_reviewers.py                ✅      rubber_stamp floor (approve all, find nothing); `baseline` is registered in run_evaluation
 │  ├─ scoring.py                            ✅      recall, false findings, verdict accuracy
 │  ├─ run_evaluation.py                     ✅      python -m evaluation.run_evaluation
 │  └─ results/                              ✅      dated JSON results (gitignored)

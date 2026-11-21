@@ -155,28 +155,48 @@ class RoutedLLM:
         raise AllModelsFailedError(self.role, attempts)
 
 
+class StructuredOutputError(RuntimeError):
+    """The model answered, but the answer did not fit the schema."""
+
+
 class StructuredRoutedLLM:
     """Same try-next loop, but every reply is parsed into `schema` (a Pydantic model).
-    Invalid JSON counts as a failure, so the next model gets a chance."""
+    Invalid JSON counts as a failure, so the next model gets a chance.
+    `last_tokens` holds the token count of the last successful call (for the eval)."""
 
     def __init__(self, parent: RoutedLLM, schema: type):
         self._parent = parent
         self._schema = schema
+        self.last_tokens: int | None = None
 
     @property
     def last_candidate(self) -> Candidate | None:
         return self._parent.last_candidate
 
     def _bind(self, chat: Any, c: Candidate) -> Any:
-        return chat.with_structured_output(self._schema, method=c.structured_method)
+        # include_raw=True returns {"raw": AIMessage, "parsed": model, "parsing_error": ...}
+        # so we can read token usage and detect bad output ourselves.
+        return chat.with_structured_output(
+            self._schema, method=c.structured_method, include_raw=True
+        )
+
+    def _unwrap(self, reply: dict[str, Any]) -> Any:
+        if reply.get("parsing_error") is not None or reply.get("parsed") is None:
+            raise StructuredOutputError(f"reply did not match {self._schema.__name__}")
+        usage = getattr(reply.get("raw"), "usage_metadata", None) or {}
+        self.last_tokens = usage.get("total_tokens")
+        return reply["parsed"]
 
     def invoke(self, input: Any, **kwargs: Any) -> Any:
-        return self._parent._run(lambda chat, c: self._bind(chat, c).invoke(input, **kwargs))
+        return self._parent._run(
+            lambda chat, c: self._unwrap(self._bind(chat, c).invoke(input, **kwargs))
+        )
 
     async def ainvoke(self, input: Any, **kwargs: Any) -> Any:
-        return await self._parent._arun(
-            lambda chat, c: self._bind(chat, c).ainvoke(input, **kwargs)
-        )
+        async def call(chat: Any, c: Candidate) -> Any:
+            return self._unwrap(await self._bind(chat, c).ainvoke(input, **kwargs))
+
+        return await self._parent._arun(call)
 
 
 class ModelRouter:
