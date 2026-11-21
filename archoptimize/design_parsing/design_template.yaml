@@ -1,0 +1,51 @@
+# ArchOptimize AI — design template
+# Fill in your system and its requirements, then submit it for review.
+# Only `design.name` and at least one component are required; everything else is optional,
+# but the more you state, the more precise the review.
+
+design:
+  name: Online shop checkout
+  description: Customers browse products and pay by card.
+
+  components:
+    - id: users                 # short unique id: lowercase, digits, - or _
+      name: Customers
+      type: client              # client | dns | cdn | waf | load_balancer | api_gateway |
+                                # compute_vm | container_service | serverless_function |
+                                # relational_database | nosql_database | cache |
+                                # object_storage | queue | stream | search |
+                                # external_service | other
+
+    - id: web
+      name: Web + API server
+      type: compute_vm
+      aws_service: EC2
+      instance_type: t3.medium  # used for cost estimates
+      replicas: 1               # running copies
+      availability_zones: 1     # how many AZs it spans
+      public: true              # reachable from the internet?
+      # autoscaling: {min_replicas: 2, max_replicas: 6}
+
+    - id: orders-db
+      name: Orders database
+      type: relational_database
+      aws_service: RDS PostgreSQL
+      instance_type: db.t3.medium
+      availability_zones: 1
+      encryption_at_rest: true  # true / false / leave out if unknown
+      backups_enabled: true
+      data_classification: confidential   # public | internal | confidential | cardholder
+
+  edges:                        # who calls whom
+    - {from: users, to: web, mode: sync, protocol: https}
+    - {from: web, to: orders-db, mode: sync, protocol: sql}
+
+requirements:
+  availability_slo_percent: 99.9   # target uptime
+  peak_rps: 500                    # peak requests per second
+  p95_latency_ms: 300
+  monthly_budget_usd: 300
+  rpo_minutes: 15                  # max data loss
+  rto_minutes: 60                  # max downtime
+  compliance: []                   # e.g. [pci_dss]
+  region: us-east-1

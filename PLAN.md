@@ -196,8 +196,8 @@ Each step: **Goal · Tasks · Done when**. Don't start a step until the previous
 
 Update this after every step (tick the box, add date + one-line note). AI assistants read this to know where we are.
 
-- [ ] Step 0 — Setup & provider layer
-- [ ] Step 1 — Data contracts + YAML input + diagram
+- [ ] Step 0 — Setup & provider layer — code + unit tests done; live smoke check blocked by Smart App Control
+- [x] Step 1 — Data contracts + YAML input + diagram — 2026-11-22: schemas (ComponentGraph, Requirements, Finding, DesignSubmission), safe YAML parser (size cap, no aliases, located errors), Mermaid renderer, `python -m archoptimize.cli preview`; 65 unit tests. `CandidateDesign`/`ReviewResult` deferred to Steps 5–6 where they're first used.
 - [ ] Step 2 — Evaluation set
 - [ ] Step 3 — Single-LLM baseline
 - [ ] Step 4 — RAG
@@ -210,7 +210,7 @@ Update this after every step (tick the box, add date + one-line note). AI assist
 - [ ] Step 11 — Deploy
 - [ ] Step 12 — Harden & showcase
 
-**Current step:** Step 0 — code written and restructured (`archoptimize/llm/`, `tests/unit/`, `config/llm_roles.yaml`, D25); waiting on: Smart App Control off → `uv run python -m pytest` → `uv run python -m archoptimize.llm.smoke_check`. **Prereqs status:** Python 3.12.10, Git 2.56, VS Code, uv 0.13.9; repo pushed to github.com/DARVINDROLE/ArchOptimize-AI; keys in `.env`.
+**Current step:** Step 2 (eval set). Open from Step 0: turn Smart App Control off → `uv run python -m pytest` (router tests) → `uv run python -m archoptimize.llm.smoke_check`. **Prereqs status:** Python 3.12.10, Git 2.56, VS Code, uv 0.13.9; repo github.com/DARVINDROLE/ArchOptimize-AI; keys in `.env`.
 
 Eval results log (fill from Step 3 on):
 

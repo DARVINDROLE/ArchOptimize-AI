@@ -47,8 +47,8 @@ ArchOptimize-AI/
 │  ├─ __init__.py                           ✅      package version
 │  │
 │  ├─ core/                                 ✅      cross-cutting basics, no business logic
-│  │  ├─ app_settings.py                    ◻      input size caps, timeouts, reviewer concurrency
-│  │  ├─ errors.py                          ◻      ArchOptimizeError family → friendly UI messages
+│  │  ├─ app_settings.py                    ✅      input size caps, timeouts, reviewer concurrency
+│  │  ├─ errors.py                          ✅      ArchOptimizeError family → friendly UI messages
 │  │  ├─ secret_redaction.py                ✅      redact API keys from any text
 │  │  ├─ untrusted_input.py                 ◻      wrap user designs as data, never as instructions
 │  │  └─ logging_setup.py                   ◻      logging with the redaction filter always on
@@ -57,10 +57,11 @@ ArchOptimize-AI/
 │  │  ├─ llm_roles.yaml                     ✅      role → provider/model + requirements
 │  │  └─ review_pillars.yaml                ◻ [5]  pillars, reviewer ↔ pillar, Critic rubric weights
 │  │
-│  ├─ schemas/                              ◻ [1]  DOMAIN CONTRACTS: pure Pydantic, no I/O
-│  │  ├─ component_graph.py                 ◻      Component, Edge, ComponentGraph
-│  │  ├─ requirements.py                    ◻      Requirements: SLO, RPS, latency, budget, compliance, region
-│  │  ├─ finding.py                         ◻      Pillar, Severity, Citation, Finding
+│  ├─ schemas/                              ✅      DOMAIN CONTRACTS: pure Pydantic, no I/O
+│  │  ├─ component_graph.py                 ✅      Component, Edge, ComponentGraph
+│  │  ├─ requirements.py                    ✅      Requirements: SLO, RPS, latency, budget, compliance, region
+│  │  ├─ design_submission.py               ✅      DesignSubmission = design + requirements (output of every parser)
+│  │  ├─ finding.py                         ✅      Pillar, Severity, Citation, Finding
 │  │  ├─ candidate_design.py                ◻ [6]  DesignChange, CandidateDesign, CriticScore
 │  │  └─ review_result.py                   ◻ [5]  PillarScore, Verdict, ReviewResult
 │  │
@@ -76,8 +77,8 @@ ArchOptimize-AI/
 │  │  └─ smoke_check.py                     ✅      live check: python -m archoptimize.llm.smoke_check
 │  │
 │  ├─ design_parsing/                       USER INPUT → ComponentGraph + Requirements
-│  │  ├─ design_template.yaml               ◻ [1]  the YAML template users fill in
-│  │  ├─ yaml_design_parser.py              ◻ [1]  no LLM
+│  │  ├─ design_template.yaml               ✅      the YAML template users fill in
+│  │  ├─ yaml_design_parser.py              ✅      no LLM
 │  │  ├─ text_design_parser.py              ◻ [8]  LLM + structured output; unknowns → assumptions
 │  │  └─ image_design_parser.py             ◻ post-MVP  vision model
 │  │
@@ -128,13 +129,14 @@ ArchOptimize-AI/
 │  │  └─ workflow_runner.py                 ◻      runs a review + streams progress events
 │  │
 │  ├─ reporting/                            OUTPUT FOR HUMANS (pure)
-│  │  ├─ mermaid_diagram.py                 ◻ [1]  ComponentGraph → Mermaid
+│  │  ├─ mermaid_diagram.py                 ✅      ComponentGraph → Mermaid
 │  │  ├─ design_diff.py                     ◻ [6]  before/after diff + change list
 │  │  └─ markdown_report.py                 ◻ [9]  ReviewResult → downloadable Markdown
 │  │
 │  ├─ review_history/                       ◻ [9]  SESSION HISTORY
 │  │  └─ history_store.py                   ◻      HistoryStore interface + SessionHistoryStore
 │  │
+│  ├─ cli.py                                ✅      local CLI: `python -m archoptimize.cli preview <file.yaml>` / `template`
 │  └─ web_ui/                               ◻ [9]  GRADIO
 │     ├─ app_builder.py                     ◻      build_app(): assembles the interface
 │     ├─ page_layout.py                     ◻      tabs and components
