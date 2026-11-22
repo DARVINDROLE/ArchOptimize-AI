@@ -45,7 +45,18 @@ flowchart LR
 
 ## Results (evaluation on 15 designs with 19 planted flaws)
 
-RESULTS_TABLE_PLACEHOLDER
+| Reviewer | Flaws found | False alarms | Correct verdict | Notes |
+|---|---|---|---|---|
+| Rubber stamp (approve everything) | 0% | 0 | 7% | floor |
+| Single LLM call | 84% | 23 | 100% | 27 s, 4.7k tokens |
+| Single LLM + RAG | 90% | 23 | 93% | 85% of findings cited |
+| Multi-agent board | 90% | 40 | 100% | 92 s, 17.7k tokens |
+| Board + Architect/Critic redesign | 79%* | 26 | 73%* | **80% of flaws fixed** in the redesign, 287 s, ~62k tokens |
+
+\* 2 of 15 cases failed on the Groq free-tier daily token limit. A clean re-run is pending.
+
+Honest reading: the board's main gain is the redesign (it fixes what it finds). It doesn't
+find more flaws than one well-prompted call with RAG, and it costs far more tokens.
 
 ## Run locally
 

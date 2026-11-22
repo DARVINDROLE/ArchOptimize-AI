@@ -14,6 +14,7 @@ from archoptimize.agents.input_guard import check_input
 from archoptimize.agents.reviewer_selector import select_pillars
 from archoptimize.agents.reviewers import REVIEWERS, run_pillar_review
 from archoptimize.core.secret_redaction import redact
+from archoptimize.llm.quota_messages import is_daily_limit
 from archoptimize.mcp_server.calculator_client import measure_designs_via_mcp
 from archoptimize.review_workflow.workflow_state import (
     MAX_REDESIGN_ROUNDS,
@@ -36,6 +37,27 @@ log = logging.getLogger(__name__)
 
 def _deps(config: RunnableConfig) -> WorkflowDeps:
     return config["configurable"]["deps"]
+
+
+_PROVIDER_LIMIT = {"groq": "Groq tokens per day", "openrouter": "OpenRouter free-models-per-day"}
+
+
+def _warning(text: str, limit: int = 300) -> str:
+    """Redact and shorten an error for the report, but never cut away the fact that a
+    provider hit its DAILY limit: the UI uses it to tell the user to wait ~24 h, not minutes.
+    (An AllModelsFailedError lists one '- provider:model: error' line per model tried.)"""
+    text = redact(text)
+    hit = [
+        label
+        for provider, label in _PROVIDER_LIMIT.items()
+        if any(is_daily_limit(line) and f"{provider}:" in line for line in text.splitlines())
+    ]
+    if not hit and is_daily_limit(text):
+        hit = [_PROVIDER_LIMIT["groq"]]
+    if not hit:
+        return text[:limit]
+    marker = f" … [rate limit: daily free-tier limit reached: {' + '.join(hit)}]"
+    return text[: limit - len(marker)] + marker
 
 
 def guard_node(state: ReviewState, config: RunnableConfig) -> dict:
@@ -91,7 +113,7 @@ def pillar_review_node(task: PillarTask, config: RunnableConfig) -> dict:
             router=deps.router,
         )
     except Exception as exc:  # one failing reviewer must not sink the whole review
-        message = redact(f"{spec.display_name} failed: {type(exc).__name__}: {exc}")[:300]
+        message = _warning(f"{spec.display_name} failed: {type(exc).__name__}: {exc}")
         log.warning(message)
         return {"warnings": [message], "events": [message]}
     event = (
@@ -117,7 +139,7 @@ def chair_node(state: ReviewState, config: RunnableConfig) -> dict:
     except Exception as exc:  # e.g. the daily token limit: still return a usable review
         draft = fallback_chair_draft(all_findings, state["guard"].flagged)
         chair_model, chair_tokens = "rule-based fallback", None
-        chair_warnings.append(redact(f"Chair failed, rule-based verdict used: {exc}")[:300])
+        chair_warnings.append(_warning(f"Chair failed, rule-based verdict used: {exc}"))
     findings = apply_chair_decisions(all_findings, draft)
     kept_ids = {f.id for f in findings}
 
@@ -211,7 +233,7 @@ def architect_node(state: ReviewState, config: RunnableConfig) -> dict:
             router=deps.router,
         )
     except Exception as exc:
-        message = redact(f"Architect failed: {type(exc).__name__}: {exc}")[:300]
+        message = _warning(f"Architect failed: {type(exc).__name__}: {exc}")
         return {
             "redesign_round": round_no,
             "candidates": [],
@@ -268,7 +290,7 @@ def critic_node(state: ReviewState, config: RunnableConfig) -> dict:
         rationale = (
             "Critic unavailable; picked the option meeting most requirements at lowest cost."
         )
-        message = redact(f"Critic failed, rule-based pick used: {type(exc).__name__}: {exc}")[:300]
+        message = _warning(f"Critic failed, rule-based pick used: {type(exc).__name__}: {exc}")
         extra = {"warnings": [message]}
         event = f"Critic unavailable → rule-based pick '{winner.name}'"
     return {
@@ -306,7 +328,7 @@ def rereview_node(state: ReviewState, config: RunnableConfig) -> dict:
                 router=deps.router,
             )
         except Exception as exc:
-            warnings.append(redact(f"Re-review by {spec.display_name} failed: {exc}")[:300])
+            warnings.append(_warning(f"Re-review by {spec.display_name} failed: {exc}"))
             continue
         blocking = [f for f in review.findings if f.severity in BLOCKING]
         open_issues += blocking
@@ -347,11 +369,19 @@ def redesign_note(state: ReviewState, redesign_enabled: bool) -> str:
     # the Architect ran but produced nothing usable: say so, whatever the verdict
     if state.get("redesign_round", 0) > 0:
         reasons = [w for w in state.get("warnings", []) if w.startswith(("Architect", "Critic"))]
-        if any("per day" in r.lower() for r in reasons):
+        if any(is_daily_limit(r) for r in reasons):
+            both = any("openrouter" in r.lower() for r in reasons)
             return (
-                "Redesign could not be completed: your Groq key has used today's free-tier "
-                "token budget for the Architect's models. It resets within ~24 hours; adding "
-                "an OpenRouter key gives the Architect more free models to fall back on."
+                "Redesign could not be completed: today's free-tier budget is used up for the "
+                "Architect's models"
+                + (" on both Groq and OpenRouter" if both else " on your Groq key")
+                + ". It resets within ~24 hours"
+                + (
+                    "."
+                    if both
+                    else "; adding an OpenRouter key gives the Architect more "
+                    "free models to fall back on."
+                )
             )
         why = f" ({reasons[-1][:160]})" if reasons else ""
         return (

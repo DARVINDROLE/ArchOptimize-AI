@@ -201,16 +201,16 @@ Update this after every step (tick the box, add date + one-line note). AI assist
 - [x] Step 2 — Evaluation set — 2026-11-22: 15 planted-flaw designs + answer keys (19 flaws, secondary issues, behaviour checks), scoring (recall, false alarms, verdict accuracy, behaviours, latency, tokens), `python -m evaluation.run_evaluation`; rubber-stamp floor recorded.
 - [x] Step 3 — Single-LLM baseline — 2026-11-22: `agents/baseline_reviewer.py` (one gpt-oss-120b call → `ReviewDraft`), prompt file, untrusted-input wrapping, token usage + schema-mismatch fallback in the router; full eval run recorded below. Note: results vary run to run (case 09 scored 0/2 then 2/2) → average several runs in Step 10.
 - [x] Step 4 — RAG — 2026-11-22: 7 PDFs (6 pillars + PCI) → 2,320 chunks (~300 tokens) → fastembed bge-small → Chroma (25 MB); pillar-filtered retriever, citation validator, `retrieval_check` 5/5; RAG baseline cites 85% of findings, recall 84%→90%. Regression to watch: good design (case 04) rejected with 6 nitpicks. Fixed PDF ligatures (NFKC).
-- [ ] Step 5 — Multi-agent core
-- [ ] Step 6 — Architect + Critic loop
-- [ ] Step 7 — MCP server
-- [ ] Step 8 — Text & image input
-- [ ] Step 9 — Gradio UI
-- [ ] Step 10 — Evaluation & optimization
-- [ ] Step 11 — Deploy
+- [x] Step 5 — Multi-agent core — 2026-11-22: LangGraph board (router → input guard → 5 pillar reviewers via `Send` fan-out → Chair), per-reviewer model spread, citation validator, rule-based Chair fallback; recall 90% (= Step 4, no gain), behaviours 100%, but false alarms 23→40 and 2.6× tokens. Watch: false alarms.
+- [x] Step 6 — Architect + Critic loop — 2026-11-22: exactly 3 patch-based options in one call (applied by code, empty/broken patches dropped), Critic of a different family, re-review up to 2 rounds; fix rate 80%. Always runs (approved designs get 3 optional improvements, per user).
+- [x] Step 7 — MCP server — 2026-11-22: FastMCP stdio calculator server (cost/capacity/availability) + client with local fallback; tool calls shown in the report.
+- [x] Step 8 — Text & image input — 2026-11-22: text → ComponentGraph via normalizer role, graph similarity 1.00 on 3 cases. Image input deferred post-MVP (D19).
+- [x] Step 9 — Gradio UI — 2026-11-22: BYOK keys, YAML/Text switch, streamed progress, 6 tabs, report download, daily-limit messages; fixes from live testing (input boxes, "no redesign" wording, 3 options shown).
+- [ ] Step 10 — Evaluation & optimization — partial: full board_redesign run done (2 cases lost to Groq TPD); TODO clean re-run, `--repeats`, token reduction.
+- [x] Step 11 — Deploy — 2026-11-22: Render free tier (D28), https://archoptimize-ai.onrender.com/, ~400 MB peak, full review 209 s live, CI green.
 - [ ] Step 12 — Harden & showcase
 
-**Current step:** Step 5 (multi-agent core). **Prereqs status:** Python 3.12.10, Git 2.56, VS Code, uv 0.13.9; repo github.com/DARVINDROLE/ArchOptimize-AI; keys in `.env`.
+**Current step:** Step 10 (clean eval re-run, token reduction, demo reviews), then Step 12. **Prereqs status:** Python 3.12.10, Git 2.56, VS Code, uv 0.13.9; repo github.com/DARVINDROLE/ArchOptimize-AI; keys in `.env`.
 
 Eval results log (fill from Step 3 on):
 
@@ -219,6 +219,8 @@ Eval results log (fill from Step 3 on):
 | 2026-11-22 | 2 (rubber_stamp floor: approve all, find nothing) | 0% (0/19) | 0 | 7% (1/15) | 0 s | — |
 | 2026-11-22 | 3 (baseline: 1 call, gpt-oss-120b, no RAG) — behaviours 100% | 84% (16/19) | 23 (HIGH/CRIT unexplained) | 100% (15/15) | 26.8 s (rate-limit retries) | 4,676 |
 | 2026-11-22 | 4 (baseline + RAG, 2 chunks/pillar) — behaviours 75%, cited 85% | 90% (17/19) | 23 | 93% (14/15; good design rejected) | 35.2 s | 6,368 |
+| 2026-11-22 | 5 (board: 5 reviewers + Chair) — behaviours 100%, cited 57% | 90% (17/19) | 40 | 100% (15/15) | 92 s | 17,700 |
+| 2026-11-22 | 6/7 (board + redesign + MCP) — behaviours 100%, cited 50%, fix rate 80% (11 redesigned); 2 cases failed on Groq TPD | 79% (15/19) | 26 | 73% (11/15) | 287 s | ~62,000 |
 
 ---
 

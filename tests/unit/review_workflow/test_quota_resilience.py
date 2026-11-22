@@ -30,6 +30,43 @@ def test_daily_limit_hint_names_the_model():
     assert daily_limit_hint("some other error") is None
 
 
+# Real shapes seen live on 2026-11-22: Groq's long JSON error, then OpenRouter's daily cap.
+OPENROUTER_DAILY = (
+    "openrouter:liquid/lfm-3-1.7b:free: OpenAIRateLimitError: Error code: 429 - Rate limit "
+    "exceeded: free-models-per-day. Add 10 credits to unlock 1000 free model requests per day"
+)
+ALL_FAILED = (
+    "All models failed for role 'architect':\n"
+    f"  - groq:openai/gpt-oss-120b: RateLimitError: {'x' * 250} {TPD_ERROR}\n"
+    f"  - {OPENROUTER_DAILY}"
+)
+
+
+def test_openrouter_daily_limit_is_recognised():
+    hint = daily_limit_hint(OPENROUTER_DAILY)
+    assert hint and "OpenRouter" in hint and "adding an OpenRouter key" not in hint
+
+
+def test_long_errors_keep_the_daily_limit_after_truncation():
+    from archoptimize.review_workflow.workflow_nodes import _warning, redesign_note
+    from archoptimize.schemas import ReviewResult
+
+    warning = _warning(f"Architect failed: AllModelsFailedError: {ALL_FAILED}")
+    assert len(warning) <= 300
+    hint = daily_limit_hint(warning)
+    assert hint and "Groq" in hint and "OpenRouter" in hint
+    state = {"result": ReviewResult(verdict=Verdict.APPROVE), "redesign_round": 1,
+             "warnings": [warning]}  # fmt: skip
+    note = redesign_note(state, True)
+    assert "both Groq and OpenRouter" in note and "few minutes" not in note
+
+
+def test_other_errors_are_just_shortened():
+    from archoptimize.review_workflow.workflow_nodes import _warning
+
+    assert _warning("Critic failed: " + "y" * 500) == ("Critic failed: " + "y" * 500)[:300]
+
+
 def test_fallback_verdict_follows_severities():
     assert fallback_chair_draft([finding(Severity.CRITICAL)], False).verdict is Verdict.REJECT
     assert (
