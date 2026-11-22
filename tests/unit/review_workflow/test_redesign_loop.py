@@ -189,10 +189,40 @@ def test_critic_failure_falls_back_to_rule_based_pick():
     assert any("Critic failed" in w for w in result.warnings)
 
 
-def test_approved_design_is_not_redesigned():
+def test_approved_design_still_gets_three_optional_improvements():
     approve = dict(responses())
     approve[ChairDraft] = CHAIR.model_copy(update={"verdict": Verdict.APPROVE})
     calls: list = []
     result = run_review(MONOLITH, keys=KEYS, router=fake_router(approve, calls))
-    assert result.revised_design is None and result.original_metrics is not None
-    assert not any(name == "ArchitectDraft" for name, _ in calls)
+    assert result.revised_design is not None  # always a proposal, never "no redesign"
+    assert "optional improvements" in result.redesign_note
+    assert sum(1 for name, _ in calls if name == "ArchitectDraft") == 1
+
+
+def test_options_that_change_nothing_are_rejected():
+    empty = ARCHITECT.model_copy(
+        update={
+            "candidates": [
+                *ARCHITECT.candidates[:2],
+                ARCHITECT.candidates[2].model_copy(
+                    update={"name": "No-op", "patch": DesignPatch()}
+                ),
+            ]
+        }
+    )
+    with_empty = dict(responses())
+    with_empty[ArchitectDraft] = empty
+    result = run_review(MONOLITH, keys=KEYS, router=fake_router(with_empty))
+    assert "No-op" not in [c.name for c in result.candidates]
+    assert any("does not change the design" in w for w in result.warnings)
+
+
+def test_revised_design_tab_shows_every_option():
+    from archoptimize.reporting.markdown_report import design_section
+
+    result = run_review(MONOLITH, keys=KEYS, router=fake_router(responses()))
+    page = design_section(MONOLITH, result)
+    assert "## All 2 options proposed by the Architect" in page  # 3rd was invalid, dropped
+    assert "### Option 1: Multi-AZ DB ✅ Critic's pick" in page
+    assert "### Option 2: Add cache only" in page
+    assert page.count("```mermaid") == 2 + 2  # before + after + one per option

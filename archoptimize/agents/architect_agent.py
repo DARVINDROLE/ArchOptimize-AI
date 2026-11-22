@@ -35,13 +35,24 @@ class ArchitectResult:
 
 
 def _finding_lines(findings: list[Finding]) -> str:
+    # serious findings first; when there are none, low/info findings are still worth acting on
+    chosen = [f for f in findings if f.severity in FIX_SEVERITIES] or list(findings)
     rows = [
         {"id": f.id, "severity": f.severity.value, "title": f.title, "components": f.component_ids,
          "recommendation": f.recommendation}
-        for f in findings
-        if f.severity in FIX_SEVERITIES
+        for f in chosen
     ]  # fmt: skip
-    return json.dumps(rows, **COMPACT)
+    return json.dumps(rows, **COMPACT) if rows else "(none: the design meets its requirements)"
+
+
+def _patch_is_empty(patch) -> bool:
+    return not (
+        patch.add_components
+        or patch.update_components
+        or patch.remove_component_ids
+        or patch.add_edges
+        or patch.remove_edges
+    )
 
 
 def build_user_message(
@@ -94,6 +105,9 @@ def propose_candidates(
     )
     applied, rejected = [], []
     for proposal in call.output.candidates:
+        if _patch_is_empty(proposal.patch):
+            rejected.append(f"'{proposal.name}': it does not change the design")
+            continue
         try:
             applied.append((proposal, apply_design_patch(submission.design, proposal.patch)))
         except PatchError as exc:

@@ -39,9 +39,10 @@ class ArchitectDraft(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     candidates: list[CandidateProposal] = Field(
-        min_length=2,
+        min_length=3,
         max_length=3,
-        description="Three genuinely different options: minimal fix, balanced, robust.",
+        description="Exactly three genuinely different options (fixes, or optional "
+        "improvements when the design is already good).",
     )
 
 

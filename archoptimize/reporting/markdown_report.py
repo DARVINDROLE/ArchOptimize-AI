@@ -154,35 +154,68 @@ def design_section(submission: DesignSubmission, result: ReviewResult) -> str:
         icon = "✅" if result.verdict is Verdict.APPROVE else "ℹ️"
         return f"## Design\n\n{icon} {note}\n\n" + to_mermaid_markdown(before)
     diff = diff_designs(before, result.revised_design)
+    winner = next((c for c in result.candidates if c.design == result.revised_design), None)
     lines = [
         "## Revised design",
         "",
-        f"{result.redesign_note or ''} Green = added, amber = changed.".strip(),
+        f"{result.redesign_note} Green = added, amber = changed.".strip(),
         "",
-        "### Before",
+        "### Before: your design",
         to_mermaid_markdown(before),
         "",
-        "### After",
+        f"### After: {winner.name if winner else 'recommended option'} (Critic's pick)",
         to_mermaid_markdown(
             result.revised_design,
             added=set(diff.added_components),
             changed=set(diff.changed_components),
         ),
         "",
-        "### Changes",
+        "**Changes:**",
         "",
+        *_change_lines(result.design_changes),
+        "",
+        "<details><summary>Exact diff</summary>",
+        "",
+        "```diff",
+        *(diff.summary_lines() or ["(no structural change)"]),
+        "```",
+        "</details>",
     ]
-    lines += [
-        f"- {c.description}" + (f" _(fixes {', '.join(c.finding_ids)})_" if c.finding_ids else "")
-        for c in result.design_changes
-    ]
-    lines += ["", "<details><summary>Exact diff</summary>", "", "```diff"]
-    lines += diff.summary_lines() or ["(no structural change)"]
-    lines += ["```", "</details>"]
     if result.remaining_issues:
         lines += ["", "**Still open after redesign:**", ""]
         lines += [f"- {f.id} ({f.severity.value}): {f.title}" for f in result.remaining_issues]
+    if result.candidates:
+        lines += ["", f"## All {len(result.candidates)} options proposed by the Architect", ""]
+        for n, c in enumerate(result.candidates, start=1):
+            option_diff = diff_designs(before, c.design)
+            picked = " ✅ Critic's pick" if c.design == result.revised_design else ""
+            score = f" · critic score {c.critic_score}/10" if c.critic_score else ""
+            lines += [
+                f"### Option {n}: {c.name}{picked}",
+                "",
+                c.approach,
+                "",
+                f"_{c.metrics.headline()}{score}_",
+                "",
+                *_change_lines(c.changes),
+                "",
+                f"**Trade-offs:** {c.trade_offs}",
+                "",
+                to_mermaid_markdown(
+                    c.design,
+                    added=set(option_diff.added_components),
+                    changed=set(option_diff.changed_components),
+                ),
+                "",
+            ]
     return "\n".join(lines)
+
+
+def _change_lines(changes) -> list[str]:
+    return [
+        f"- {c.description}" + (f" _(fixes {', '.join(c.finding_ids)})_" if c.finding_ids else "")
+        for c in changes
+    ] or ["- (no change list given)"]
 
 
 def trace_section(result: ReviewResult) -> str:

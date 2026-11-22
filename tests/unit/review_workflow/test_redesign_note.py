@@ -39,6 +39,16 @@ def test_architect_failure_is_explained():
     assert "could not be completed" in note and "rate limited" in note
 
 
+def test_architect_daily_limit_on_an_approved_design_is_not_called_not_needed():
+    s = state(
+        Verdict.APPROVE,
+        redesign_round=1,
+        warnings=["Architect failed: 429 ... on tokens per day (TPD): Limit 200000"],
+    )
+    note = redesign_note(s, True)
+    assert "today's free-tier" in note and "not needed" not in note.lower()
+
+
 def test_redesign_switched_off():
     assert "switched off" in redesign_note(state(Verdict.REJECT), False)
 

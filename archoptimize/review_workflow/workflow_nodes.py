@@ -182,16 +182,10 @@ def fallback_chair_draft(findings: list[Finding], input_flagged: bool) -> ChairD
 BLOCKING = (Severity.CRITICAL, Severity.HIGH)
 
 
-def _needs_redesign(result: ReviewResult) -> bool:
-    return result.verdict is not Verdict.APPROVE and any(
-        f.severity.rank >= Severity.MEDIUM.rank for f in result.findings
-    )
-
-
 def after_chair(state: ReviewState, config: RunnableConfig) -> str:
-    if _deps(config).redesign and _needs_redesign(state["result"]):
-        return "architect"
-    return "finalize"
+    """Every review gets 3 redesign options: fixes when the board found problems, optional
+    improvements (cost, resilience, performance) when the design is already approved."""
+    return "architect" if _deps(config).redesign else "finalize"
 
 
 def architect_node(state: ReviewState, config: RunnableConfig) -> dict:
@@ -338,21 +332,34 @@ def redesign_note(state: ReviewState, redesign_enabled: bool) -> str:
     """Tell the user WHY there is or is not a revised design (never a misleading silence)."""
     result = state["result"]
     if state.get("winner") is not None:
+        pick = state["winner"].name
+        if result.verdict is Verdict.APPROVE:
+            return (
+                "The design already meets its requirements: the 3 options are optional "
+                f"improvements. The Critic recommends '{pick}'."
+            )
         rounds = state.get("redesign_round", 0)
         left = len(state.get("open_issues", []))
-        tail = f"; {left} serious issue(s) still open" if left else "; no serious issues left"
-        return f"Redesigned in {rounds} round(s){tail}."
-    if result.verdict is Verdict.APPROVE:
-        return "No redesign needed: the design meets its stated requirements."
+        tail = f"{left} serious issue(s) still open" if left else "no serious issues left"
+        return f"The Critic picked '{pick}' ({rounds} redesign round(s); {tail})."
     if not redesign_enabled:
         return "Redesign was switched off for this run."
+    # the Architect ran but produced nothing usable: say so, whatever the verdict
     if state.get("redesign_round", 0) > 0:
         reasons = [w for w in state.get("warnings", []) if w.startswith(("Architect", "Critic"))]
-        why = f" ({reasons[-1]})" if reasons else ""
+        if any("per day" in r.lower() for r in reasons):
+            return (
+                "Redesign could not be completed: your Groq key has used today's free-tier "
+                "token budget for the Architect's models. It resets within ~24 hours; adding "
+                "an OpenRouter key gives the Architect more free models to fall back on."
+            )
+        why = f" ({reasons[-1][:160]})" if reasons else ""
         return (
             f"Redesign could not be completed{why}. This is usually a temporary free-tier "
             "rate limit: please try again in a few minutes."
         )
+    if result.verdict is Verdict.APPROVE:
+        return "No redesign needed: the design meets its stated requirements."
     if result.requirement_conflicts:
         return (
             "No redesign proposed: the requirements conflict with each other (see Verdict). "
