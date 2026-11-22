@@ -29,15 +29,19 @@ INCLUDE = [
 EXCLUDE = ["**/__pycache__/**", "**/*.pyc"]
 
 
-def check_ready() -> list[str]:
-    problems = []
+def check_ready() -> tuple[list[str], list[str]]:
+    """(problems that block a deploy, warnings that don't)."""
+    problems, warnings = [], []
     if not (ROOT / "data" / "knowledge_index" / "chroma.sqlite3").exists():
         problems.append("index missing: run python -m archoptimize.knowledge_base.index_builder")
-    if not list((ROOT / "data" / "demo_reviews").glob("*.json")):
-        problems.append("no demo reviews: run python -m archoptimize.web_ui.demo_mode --cases ...")
     if not (ROOT / "requirements.txt").exists():
         problems.append("requirements.txt missing: run uv export (see README)")
-    return problems
+    if not list((ROOT / "data" / "demo_reviews").glob("*.json")):
+        warnings.append(
+            "no demo reviews yet (demo mode will be empty): "
+            "python -m archoptimize.web_ui.demo_mode --cases ..."
+        )
+    return problems, warnings
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -53,7 +57,9 @@ def main(argv: list[str] | None = None) -> int:
     if not token:
         print("HF_TOKEN is not set", file=sys.stderr)
         return 1
-    problems = check_ready()
+    problems, warnings = check_ready()
+    for w in warnings:
+        print(f"warning: {w}", file=sys.stderr)
     if problems:
         print("Not ready to deploy:\n- " + "\n- ".join(problems), file=sys.stderr)
         return 1
