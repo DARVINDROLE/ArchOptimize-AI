@@ -289,7 +289,10 @@ class ModelRouter:
         ref = rc.requirements.different_family_from
         if ref is None:
             return set()
-        return {family_of(m) for m in self.settings.role(ref).models}
+        # The family of the referenced role's PRIMARY model: its fallbacks may be other
+        # families, and excluding those too could leave no candidate at all.
+        models = self.settings.role(ref).models
+        return {family_of(models[0])} if models else set()
 
     def _openrouter_candidates(self, req: RoleRequirements, exclude: set[str]) -> list[Candidate]:
         try:

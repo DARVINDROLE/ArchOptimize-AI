@@ -21,6 +21,7 @@ from archoptimize.core.secret_redaction import redact
 from archoptimize.design_parsing.text_design_parser import parse_design_text
 from archoptimize.design_parsing.yaml_design_parser import parse_design_yaml
 from archoptimize.llm.api_keys import ProviderKeys
+from archoptimize.llm.quota_messages import daily_limit_hint
 from archoptimize.reporting.markdown_report import (
     build_report,
     cost_section,
@@ -52,6 +53,9 @@ def _keys(groq_key: str, openrouter_key: str) -> ProviderKeys:
 def _friendly(exc: Exception) -> str:
     if isinstance(exc, DesignInputError):
         return "❌ " + exc.user_message.replace("\n", "  \n")
+    hint = daily_limit_hint(str(exc))
+    if hint:
+        return hint
     return f"❌ {type(exc).__name__}: {redact(str(exc))[:400]}"
 
 
@@ -187,6 +191,8 @@ def run_review_stream(
         yield ("\n\n".join([*log_lines, _friendly(outcome["error"])]), *blank)
         return
     log_lines.append(f"**Done in {time.perf_counter() - started:.0f}s.** See the result tabs.")
+    hints = {h for w in outcome["result"].warnings if (h := daily_limit_hint(w))}
+    log_lines += sorted(hints)
     yield ("\n\n".join(log_lines), *_render(submission, outcome["result"]))
 
 

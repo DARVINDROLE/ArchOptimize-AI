@@ -21,7 +21,14 @@ from archoptimize.review_workflow.workflow_state import (
     ReviewState,
     WorkflowDeps,
 )
-from archoptimize.schemas import Finding, PillarReview, ReviewResult, Severity, Verdict
+from archoptimize.schemas import (
+    ChairDraft,
+    Finding,
+    PillarReview,
+    ReviewResult,
+    Severity,
+    Verdict,
+)
 from archoptimize.schemas.candidate_design import CandidateDesign
 
 log = logging.getLogger(__name__)
@@ -100,19 +107,25 @@ def chair_node(state: ReviewState, config: RunnableConfig) -> dict:
     reviews: list[PillarReview] = sorted(
         state.get("pillar_reviews", []), key=lambda r: order.get(r.pillar, 99)
     )
-    call = run_chair(
-        state["submission"], reviews, state["guard"], keys=deps.keys, router=deps.router
-    )
-    draft = call.output
     all_findings = [f for r in reviews for f in r.findings]
+    chair_warnings: list[str] = []
+    try:
+        call = run_chair(
+            state["submission"], reviews, state["guard"], keys=deps.keys, router=deps.router
+        )
+        draft, chair_model, chair_tokens = call.output, call.model, call.tokens
+    except Exception as exc:  # e.g. the daily token limit: still return a usable review
+        draft = fallback_chair_draft(all_findings, state["guard"].flagged)
+        chair_model, chair_tokens = "rule-based fallback", None
+        chair_warnings.append(redact(f"Chair failed, rule-based verdict used: {exc}")[:300])
     findings = apply_chair_decisions(all_findings, draft)
     kept_ids = {f.id for f in findings}
 
     sources = {c.chunk_id: c for r in reviews for c in r.sources}
     models = {"Input guard": state["guard"].model or "rules only"}
     models |= {f"{r.pillar.value} reviewer": r.model for r in reviews}
-    models["Chair"] = call.model
-    tokens = [t for t in [*(r.tokens for r in reviews), call.tokens] if t is not None]
+    models["Chair"] = chair_model
+    tokens = [t for t in [*(r.tokens for r in reviews), chair_tokens] if t is not None]
     assumptions = list(
         dict.fromkeys([*draft.assumptions, *(a for r in reviews for a in r.assumptions)])
     )
@@ -128,15 +141,38 @@ def chair_node(state: ReviewState, config: RunnableConfig) -> dict:
         guard_reasons=state["guard"].reasons,
         sources=list(sources.values()),
         uncited_finding_ids=[i for r in reviews for i in r.uncited_finding_ids if i in kept_ids],
-        warnings=state.get("warnings", []),
+        warnings=[*state.get("warnings", []), *chair_warnings],
         models_used=models,
         tokens_used=sum(tokens) if tokens else None,
     )
     return {
         "result": result,
         "current_design": state["submission"].design,
-        "events": [f"Chair: verdict {draft.verdict.value} ({call.model})"],
+        "warnings": chair_warnings,
+        "events": [*chair_warnings, f"Chair: verdict {draft.verdict.value} ({chair_model})"],
     }
+
+
+def fallback_chair_draft(findings: list[Finding], input_flagged: bool) -> ChairDraft:
+    """Verdict straight from the severities, used only when the Chair LLM is unavailable."""
+    worst = max((f.severity.rank for f in findings), default=-1)
+    if worst >= Severity.CRITICAL.rank:
+        verdict = Verdict.REJECT
+    elif worst >= Severity.MEDIUM.rank or input_flagged:
+        verdict = Verdict.APPROVE_WITH_CHANGES
+    else:
+        verdict = Verdict.APPROVE
+    return ChairDraft(
+        summary=(
+            "The Chair model was unavailable, so this verdict was computed from the reviewers' "
+            f"finding severities ({len(findings)} finding(s)). Duplicates were not merged."
+        ),
+        duplicate_finding_ids=[],
+        severity_adjustments=[],
+        requirement_conflicts=[],
+        assumptions=[],
+        verdict=verdict,
+    )
 
 
 # --------------------------------------------------------------------------------------

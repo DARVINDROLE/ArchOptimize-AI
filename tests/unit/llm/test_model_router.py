@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 
 import pytest
 from pydantic import BaseModel
@@ -17,6 +18,7 @@ from archoptimize.llm.model_router import (
 )
 from archoptimize.llm.role_config import load_settings
 
+TEST_ROLES = Path(__file__).parents[2] / "fixtures" / "llm_roles_test.yaml"
 KEYS_BOTH = ProviderKeys.from_values("gsk_" + "x" * 40, "sk-or-v1-" + "y" * 40)
 KEYS_GROQ_ONLY = ProviderKeys.from_values("gsk_" + "x" * 40, None)
 
@@ -78,7 +80,7 @@ def make_router(openrouter_models):
     def _make(failures: dict[str, Exception] | None = None) -> ModelRouter:
         failures = failures or {}
         return ModelRouter(
-            load_settings(),
+            load_settings(TEST_ROLES),
             chat_factory=lambda c, _keys: FakeChat(failures.get(c.model, "ok")),
             openrouter_fetch=lambda: openrouter_models,
             groq_fetch=lambda _key: GROQ_LIVE_MODELS,
@@ -179,3 +181,15 @@ def test_async_invoke_falls_back_too(make_router):
 def test_unknown_role_is_rejected(make_router):
     with pytest.raises(ValueError, match="unknown role"):
         make_router().candidates_for("nope", KEYS_BOTH)
+
+
+def test_production_config_leaves_the_critic_a_groq_model(openrouter_models):
+    """Regression: listing qwen as an Architect FALLBACK must not exclude qwen as Critic."""
+    router = ModelRouter(
+        load_settings(),  # the real archoptimize/config/llm_roles.yaml
+        chat_factory=lambda c, _keys: FakeChat("ok"),
+        openrouter_fetch=lambda: openrouter_models,
+        groq_fetch=lambda _key: GROQ_LIVE_MODELS,
+    )
+    candidates = router.candidates_for("critic", KEYS_GROQ_ONLY)
+    assert candidates and all(family_of(c.model) != "openai" for c in candidates)

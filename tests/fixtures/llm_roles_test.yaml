@@ -1,0 +1,29 @@
+# Fixed role config for router unit tests, so tuning the production
+# archoptimize/config/llm_roles.yaml (model order, budgets) never breaks these tests.
+groq:
+  max_retries: 0
+  cooldown_seconds: 60
+  live_fallback_limit: 2
+
+openrouter:
+  max_attempts: 3
+  cooldown_seconds: 300
+  fallback_min_context: 32000
+
+roles:
+  router:     {provider: groq, models: [openai/gpt-oss-20b]}
+  reviewer:   {provider: groq, models: [openai/gpt-oss-20b]}
+  architect:  {provider: groq, models: [openai/gpt-oss-120b, openai/gpt-oss-20b]}
+  chair:      {provider: groq, models: [openai/gpt-oss-120b, openai/gpt-oss-20b]}
+  guard:
+    provider: groq
+    models: [meta-llama/llama-prompt-guard-2-86m]
+    allow_fallback: false
+    requirements: {structured_output: false}
+  critic:
+    provider: openrouter
+    groq_fallback: true
+    requirements: {structured_output: true, min_context: 64000, different_family_from: architect}
+  vision:
+    provider: openrouter
+    requirements: {image_input: true, structured_output: true}
