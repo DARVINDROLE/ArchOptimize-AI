@@ -298,12 +298,44 @@ def after_rereview(state: ReviewState) -> str:
     return "finalize"
 
 
-def finalize_node(state: ReviewState) -> dict:
+def redesign_note(state: ReviewState, redesign_enabled: bool) -> str:
+    """Tell the user WHY there is or is not a revised design (never a misleading silence)."""
+    result = state["result"]
+    if state.get("winner") is not None:
+        rounds = state.get("redesign_round", 0)
+        left = len(state.get("open_issues", []))
+        tail = f"; {left} serious issue(s) still open" if left else "; no serious issues left"
+        return f"Redesigned in {rounds} round(s){tail}."
+    if result.verdict is Verdict.APPROVE:
+        return "No redesign needed: the design meets its stated requirements."
+    if not redesign_enabled:
+        return "Redesign was switched off for this run."
+    if state.get("redesign_round", 0) > 0:
+        reasons = [w for w in state.get("warnings", []) if w.startswith(("Architect", "Critic"))]
+        why = f" ({reasons[-1]})" if reasons else ""
+        return (
+            f"Redesign could not be completed{why}. This is usually a temporary free-tier "
+            "rate limit: please try again in a few minutes."
+        )
+    if result.requirement_conflicts:
+        return (
+            "No redesign proposed: the requirements conflict with each other (see Verdict). "
+            "Relax one of them (e.g. budget or SLO), then review again."
+        )
+    return (
+        "No redesign proposed: the review found no concrete component-level flaw to fix — the "
+        "verdict is driven by missing information. Add the missing details (see Assumptions) "
+        "and review again."
+    )
+
+
+def finalize_node(state: ReviewState, config: RunnableConfig) -> dict:
     result = state["result"]
     update: dict = {
         "original_metrics": state["original_metrics"],
         "tool_calls": state.get("tool_calls", []),
         "warnings": state.get("warnings", []),
+        "redesign_note": redesign_note(state, _deps(config).redesign),
     }
     winner = state.get("winner")
     if winner is not None:

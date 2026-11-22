@@ -144,12 +144,20 @@ def cost_section(result: ReviewResult) -> str:
 def design_section(submission: DesignSubmission, result: ReviewResult) -> str:
     before = submission.design
     if result.revised_design is None:
-        return "## Design\n\nNo redesign needed.\n\n" + to_mermaid_markdown(before)
+        # say WHY there is no redesign; a rejected design must never read "no redesign needed"
+        if result.redesign_note:
+            note = result.redesign_note
+        elif result.verdict is Verdict.APPROVE:
+            note = "No redesign needed: the design meets its stated requirements."
+        else:
+            note = "No redesign was produced for this review."
+        icon = "✅" if result.verdict is Verdict.APPROVE else "ℹ️"
+        return f"## Design\n\n{icon} {note}\n\n" + to_mermaid_markdown(before)
     diff = diff_designs(before, result.revised_design)
     lines = [
         "## Revised design",
         "",
-        f"Redesign rounds: {result.redesign_rounds}. Green = added, amber = changed.",
+        f"{result.redesign_note or ''} Green = added, amber = changed.".strip(),
         "",
         "### Before",
         to_mermaid_markdown(before),

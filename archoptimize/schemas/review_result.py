@@ -118,6 +118,9 @@ class ReviewResult(BaseModel):
         default_factory=list, description="Blocking findings the re-review still found."
     )
     redesign_rounds: int = 0
+    redesign_note: str = Field(
+        default="", description="Why there is (or is not) a revised design, shown to the user."
+    )
     tool_calls: list[ToolCallRecord] = Field(
         default_factory=list, description="Calculator (MCP) calls made during the review."
     )
