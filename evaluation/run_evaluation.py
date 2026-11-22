@@ -63,15 +63,19 @@ def run_evaluation(
     reviewer_name: str,
     reviewer: Reviewer,
     only: str | None = None,
+    repeats: int = 1,
 ) -> tuple[EvalSummary, list[CaseScore]]:
+    """Run every case `repeats` times. LLM answers vary between runs, so averaging over
+    repeats gives a fairer comparison between steps (the summary covers all runs)."""
     scores: list[CaseScore] = []
-    for case in load_cases(only=only):
-        started = time.perf_counter()
-        try:
-            result, error = reviewer(case.submission), None
-        except Exception as exc:  # one broken case must not stop the whole run
-            result, error = None, redact(f"{type(exc).__name__}: {exc}")[:300]
-        scores.append(score_case(case, result, time.perf_counter() - started, error))
+    for _ in range(max(1, repeats)):
+        for case in load_cases(only=only):
+            started = time.perf_counter()
+            try:
+                result, error = reviewer(case.submission), None
+            except Exception as exc:  # one broken case must not stop the whole run
+                result, error = None, redact(f"{type(exc).__name__}: {exc}")[:300]
+            scores.append(score_case(case, result, time.perf_counter() - started, error))
     return summarize(reviewer_name, scores), scores
 
 
@@ -125,9 +129,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--reviewer", default="rubber_stamp", choices=sorted(REVIEWERS))
     parser.add_argument("--case", help="only run cases whose id contains this text")
     parser.add_argument("--no-save", action="store_true", help="do not write a results file")
+    parser.add_argument("--repeats", type=int, default=1, help="runs per case (averaged)")
     args = parser.parse_args(argv)
 
-    summary, scores = run_evaluation(args.reviewer, REVIEWERS[args.reviewer], only=args.case)
+    summary, scores = run_evaluation(
+        args.reviewer, REVIEWERS[args.reviewer], only=args.case, repeats=args.repeats
+    )
     if not scores:
         print("No cases matched.", file=sys.stderr)
         return 1

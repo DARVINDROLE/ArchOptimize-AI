@@ -37,6 +37,7 @@ from archoptimize.web_ui.session_limits import SessionLimiter
 log = logging.getLogger(__name__)
 limiter = SessionLimiter()
 EMPTY = ""
+MAX_REVIEW_SECONDS = 600  # give up waiting after 10 minutes (the worker thread is a daemon)
 
 
 def submission_to_yaml(submission: DesignSubmission) -> str:
@@ -158,7 +159,16 @@ def run_review_stream(
     log_lines: list[str] = []
     try:
         while True:
-            event = events.get()
+            remaining = MAX_REVIEW_SECONDS - (time.perf_counter() - started)
+            try:
+                event = events.get(timeout=max(remaining, 0.1))
+            except queue.Empty:
+                timeout_msg = (
+                    f"⏱️ The review took longer than {MAX_REVIEW_SECONDS // 60} minutes "
+                    "(free-tier rate limits?). Please try again in a few minutes."
+                )
+                yield ("\n\n".join([*log_lines, timeout_msg]), *blank)
+                return
             if event is None:
                 break
             log_lines.append(f"`{time.perf_counter() - started:5.1f}s` {event}")

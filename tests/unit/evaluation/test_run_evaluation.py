@@ -36,6 +36,13 @@ def test_cli_runs_without_saving(capsys):
     assert "13_public_database" in out and "Saved" not in out
 
 
+def test_repeats_run_every_case_several_times():
+    summary, scores = run_evaluation(
+        "rs", lambda _s: ReviewResult(verdict="approve"), only="pci", repeats=3
+    )
+    assert len(scores) == 3 and summary.cases == 3
+
+
 def test_cli_no_matching_cases():
     assert main(["--case", "does-not-exist", "--no-save"]) == 1
 

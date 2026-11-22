@@ -62,6 +62,25 @@ def test_review_streams_events_then_results(monkeypatch):
     assert GROQ not in report  # keys never end up in the report
 
 
+def test_review_that_hangs_times_out(monkeypatch):
+    import threading
+
+    release = threading.Event()
+
+    def stuck_review(submission, *, keys, retriever, on_event):
+        release.wait(5)
+        return ReviewResult(verdict=Verdict.APPROVE)
+
+    monkeypatch.setattr(workflow_runner, "run_review", stuck_review)
+    monkeypatch.setattr(event_handlers, "limiter", SessionLimiter())
+    monkeypatch.setattr(event_handlers, "MAX_REVIEW_SECONDS", 0.5)
+    parsed = event_handlers.submission_to_yaml(load_cases(only="01_")[0].submission)
+    last = list(event_handlers.run_review_stream(parsed, GROQ, "", "s3"))[-1]
+    release.set()
+    assert "longer than" in last[0]
+    assert event_handlers.limiter.try_start("s3")[0]  # the slot was released
+
+
 def test_session_limits():
     now = [0.0]
     limiter = SessionLimiter(max_per_hour=2, max_concurrent=1, clock=lambda: now[0])
