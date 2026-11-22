@@ -7,6 +7,7 @@ differently, hence `embed_query` vs `embed_passages`.
 
 from __future__ import annotations
 
+import os
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Protocol
@@ -25,7 +26,13 @@ class FastEmbedEmbedder:
     def __init__(self, model_name: str = EMBEDDING_MODEL, cache_dir: Path = MODEL_CACHE_DIR):
         from fastembed import TextEmbedding  # heavy import, only when actually used
 
-        self._model = TextEmbedding(model_name=model_name, cache_dir=str(cache_dir))
+        # EMBEDDING_THREADS=1 on small hosts (e.g. 512 MB): ONNX keeps buffers per thread.
+        threads = os.getenv("EMBEDDING_THREADS")
+        self._model = TextEmbedding(
+            model_name=model_name,
+            cache_dir=str(cache_dir),
+            threads=int(threads) if threads else None,
+        )
 
     def embed_passages(self, texts: Sequence[str]) -> list[list[float]]:
         return [v.tolist() for v in self._model.passage_embed(list(texts))]

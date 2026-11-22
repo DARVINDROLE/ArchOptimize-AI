@@ -1,17 +1,3 @@
----
-title: ArchOptimize AI
-emoji: 🏛️
-colorFrom: blue
-colorTo: indigo
-sdk: gradio
-sdk_version: 6.32.0
-python_version: "3.12"
-app_file: app.py
-pinned: false
-license: mit
-short_description: Multi-agent AWS architecture review board with redesigns
----
-
 # 🏛️ ArchOptimize AI — an AI Architecture Review Board
 
 Paste an AWS system design (YAML or plain text) with its requirements — uptime SLO, peak
@@ -20,9 +6,9 @@ Architecture Review Board, cites the **AWS Well-Architected Framework**, propose
 redesigns**, lets an independent **Critic** pick one, re-checks it, and returns a verdict
 with **before/after diagrams and calculated cost, availability and capacity**.
 
-**Try it:** [Hugging Face Space](https://huggingface.co/spaces/Laukik7/ArchOptimize-AI) —
-open a demo review without any key, or paste a free [Groq](https://console.groq.com/keys)
-key to review your own design.
+**Try it:** [archoptimize-ai.onrender.com](https://archoptimize-ai.onrender.com) — open a
+demo review without any key, or paste a free [Groq](https://console.groq.com/keys) key to
+review your own design. (Free hosting sleeps when idle: the first visit takes ~1 minute.)
 
 > **AI suggestion, not an approval.** A personal learning project — estimates are
 > approximate. Don't paste confidential designs (free models may log prompts).
@@ -83,7 +69,7 @@ uv run python -m archoptimize.mcp_server.calculator_server   # the MCP server on
 ## Limits
 
 - Free tiers: Groq allows ~8k tokens/minute per model, so a full review takes 1–3 minutes.
-- The Space sleeps after ~48 h without visitors; the first load then takes ~1 minute.
+- Hosted on Render's free tier (512 MB RAM, sleeps after 15 min idle → ~1 min cold start).
 - Prices are an approximate us-east-1 snapshot; availability uses public SLA tiers.
 - Image (diagram) input is not in the MVP.
 

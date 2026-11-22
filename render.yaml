@@ -1,0 +1,27 @@
+# Render Blueprint: one free web service running the Gradio app.
+# Create it once: Render dashboard → New → Blueprint → pick this GitHub repo → Apply.
+# After that, every push to main redeploys automatically.
+services:
+  - type: web
+    name: archoptimize-ai
+    runtime: python
+    plan: free
+    branch: main
+    autoDeploy: true
+    # Install pinned deps, then build the AWS docs index into the image (~5-10 min).
+    buildCommand: pip install -r requirements.txt && python -m archoptimize.knowledge_base.index_builder
+    startCommand: python app.py
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: EMBEDDING_THREADS   # keep the embedding model small (512 MB instance)
+        value: "1"
+      - key: MALLOC_ARENA_MAX    # limit glibc memory fragmentation in small containers
+        value: "2"
+      - key: GRADIO_ANALYTICS_ENABLED
+        value: "False"
+      - key: HF_HUB_DISABLE_TELEMETRY
+        value: "1"
+      - key: HF_HUB_DISABLE_SYMLINKS_WARNING
+        value: "1"
