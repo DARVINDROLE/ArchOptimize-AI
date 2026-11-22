@@ -56,6 +56,13 @@ def _friendly(exc: Exception) -> str:
 
 
 # ---------------------------------------------------------------- 1. parse + confirm
+def input_visibility(mode: str):
+    """Show the YAML editor or the free-text box, depending on the chosen format."""
+    import gradio as gr
+
+    return gr.update(visible=mode == "YAML"), gr.update(visible=mode == "Text")
+
+
 def parse_input(mode: str, yaml_text: str, free_text: str, groq_key: str, openrouter_key: str):
     """Returns (status, editable YAML, diagram)."""
     try:

@@ -69,11 +69,14 @@ def build_app() -> gr.Blocks:
                     value=design_template_text(), language="yaml", label="Design (YAML template)"
                 )
                 text_input = gr.Textbox(
-                    lines=8,
+                    lines=10,
                     label="Design (free text — needs a Groq key)",
                     placeholder=TEXT_PLACEHOLDER,
+                    visible=False,  # shown when "Text" is selected
                 )
                 parse_button = gr.Button("Parse design →", variant="primary")
+                # only the box for the chosen format is visible
+                mode.change(h.input_visibility, inputs=[mode], outputs=[yaml_input, text_input])
 
             with gr.Tab("2 · Confirm design"):
                 parse_status = gr.Markdown()

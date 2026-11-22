@@ -20,6 +20,13 @@ def test_app_builds():
     assert isinstance(build_app(), gr.Blocks)
 
 
+def test_only_the_chosen_input_box_is_visible():
+    yaml_box, text_box = event_handlers.input_visibility("Text")
+    assert yaml_box["visible"] is False and text_box["visible"] is True
+    yaml_box, text_box = event_handlers.input_visibility("YAML")
+    assert yaml_box["visible"] is True and text_box["visible"] is False
+
+
 def test_parse_yaml_and_round_trip_for_editing():
     status, parsed, diagram = event_handlers.parse_input("YAML", design_template_text(), "", "", "")
     assert status.startswith("✅") and "```mermaid" in diagram
