@@ -64,6 +64,7 @@ def run_evaluation(
     reviewer: Reviewer,
     only: str | None = None,
     repeats: int = 1,
+    on_case: Callable[[CaseScore], None] | None = None,
 ) -> tuple[EvalSummary, list[CaseScore]]:
     """Run every case `repeats` times. LLM answers vary between runs, so averaging over
     repeats gives a fairer comparison between steps (the summary covers all runs)."""
@@ -76,7 +77,19 @@ def run_evaluation(
             except Exception as exc:  # one broken case must not stop the whole run
                 result, error = None, redact(f"{type(exc).__name__}: {exc}")[:300]
             scores.append(score_case(case, result, time.perf_counter() - started, error))
+            if on_case:
+                on_case(scores[-1])
     return summarize(reviewer_name, scores), scores
+
+
+def _progress_line(s: CaseScore) -> None:
+    """Printed (and flushed) as each case finishes, so long runs show progress."""
+    fixed = f" fixed {s.flaws_fixed}/{s.flaws_found}" if s.redesigned else ""
+    print(
+        f"[done] {s.case_id:<30} flaws {s.flaws_found}/{s.flaws_planted}{fixed} "
+        f"verdict={s.verdict} {s.latency_seconds:.0f}s" + (f" ERROR {s.error}" if s.error else ""),
+        flush=True,
+    )
 
 
 def save_results(
@@ -133,7 +146,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     summary, scores = run_evaluation(
-        args.reviewer, REVIEWERS[args.reviewer], only=args.case, repeats=args.repeats
+        args.reviewer,
+        REVIEWERS[args.reviewer],
+        only=args.case,
+        repeats=args.repeats,
+        on_case=_progress_line,
     )
     if not scores:
         print("No cases matched.", file=sys.stderr)
