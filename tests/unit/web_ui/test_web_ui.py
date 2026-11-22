@@ -5,6 +5,7 @@ from __future__ import annotations
 import gradio as gr
 
 from archoptimize.design_parsing.yaml_design_parser import design_template_text
+from archoptimize.retrieval import pillar_retriever
 from archoptimize.review_workflow import workflow_runner
 from archoptimize.schemas import ReviewResult, Verdict
 from archoptimize.web_ui import demo_mode, event_handlers
@@ -52,6 +53,8 @@ def test_review_streams_events_then_results(monkeypatch):
 
     monkeypatch.setattr(workflow_runner, "run_review", fake_run_review)
     monkeypatch.setattr(event_handlers, "limiter", SessionLimiter())
+    # don't depend on whether this machine has built the (gitignored) docs index
+    monkeypatch.setattr(pillar_retriever, "default_retriever", lambda: None)
     parsed = event_handlers.submission_to_yaml(load_cases(only="01_")[0].submission)
     updates = list(event_handlers.run_review_stream(parsed, GROQ, "", "s2"))
     assert "Input guard" in updates[0][0]
@@ -74,6 +77,7 @@ def test_review_that_hangs_times_out(monkeypatch):
     monkeypatch.setattr(workflow_runner, "run_review", stuck_review)
     monkeypatch.setattr(event_handlers, "limiter", SessionLimiter())
     monkeypatch.setattr(event_handlers, "MAX_REVIEW_SECONDS", 0.5)
+    monkeypatch.setattr(pillar_retriever, "default_retriever", lambda: None)
     parsed = event_handlers.submission_to_yaml(load_cases(only="01_")[0].submission)
     last = list(event_handlers.run_review_stream(parsed, GROQ, "", "s3"))[-1]
     release.set()
